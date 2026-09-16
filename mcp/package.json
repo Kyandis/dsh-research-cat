@@ -1,0 +1,41 @@
+{
+  "name": "research-cat-mcp",
+  "version": "1.0.0",
+  "description": "Research Cat as an MCP server: search OpenAlex, collect papers, expand references / citing papers / similar work. Works with Codex CLI, Claude Code, Cursor and any remote MCP client (ChatGPT connectors).",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "research-cat-mcp": "bin/stdio.mjs"
+  },
+  "exports": {
+    ".": "./src/server.mjs",
+    "./stdio": "./bin/stdio.mjs",
+    "./http": "./bin/http.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node bin/stdio.mjs",
+    "start:http": "node bin/http.mjs",
+    "test": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.5"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "openalex",
+    "citation-graph",
+    "literature-search",
+    "codex",
+    "chatgpt"
+  ]
+}
