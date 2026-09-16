@@ -8,15 +8,6 @@
 搜索 → 加入种子 → 展开（references / citations / related）→ 看图与详情
 ```
 
-## 两种形态
-
-| 形态 | 位置 | 能接入 |
-|---|---|---|
-| **DSH 插件**（侧栏面板 + agent 工具） | 仓库根目录 | **DeepSeek Harness** —— 只有它有图形面板 |
-| **MCP server**（6 个工具） | [`mcp/`](mcp/) | **Codex CLI / Claude Code / Cursor / ChatGPT** —— 任何 MCP 客户端；纯文本，无面板 |
-
-两者共用同一套 OpenAlex 访问与图逻辑；MCP 版把 host 半边搬成了无 DSH 依赖的实现，并提供 **stdio**（本地客户端）与 **Streamable HTTP**（ChatGPT 这类云端客户端）两个入口。接入命令见 [`mcp/README.md`](mcp/README.md)。
-
 ## 预览
 
 | 改进前（力导向布局） | 改进后（径向布局） |

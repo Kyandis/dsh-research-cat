@@ -8,15 +8,6 @@ A literature-discovery workbench for **DeepSeek Harness**: a sidebar panel plus 
 search → add to collection → expand (references / citations / related) → explore the graph and details
 ```
 
-## Two forms
-
-| Form | Location | Works with |
-|---|---|---|
-| **DSH plugin** (sidebar panel + agent Tool) | repository root | **DeepSeek Harness** — the only form with the graph panel |
-| **MCP server** (6 tools) | [`mcp/`](mcp/) | **Codex CLI / Claude Code / Cursor / ChatGPT** — any MCP client; text only, no panel |
-
-Both share the same OpenAlex access and graph logic; the MCP form ports the host half to something with no DSH dependency and ships **two transports**: stdio for local clients and Streamable HTTP for cloud clients such as ChatGPT. Setup commands: [`mcp/README.md`](mcp/README.md).
-
 ## Preview
 
 | Before (force-directed) | After (radial) |
