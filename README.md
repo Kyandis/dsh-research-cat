@@ -17,21 +17,33 @@
 > **这两张图不是面板截图**，而是仓库自带 `lab/render.mjs` 生成的**离线布局渲染**（近似配色，用来评判布局本身）。数据是真实的：两个种子（各 29 篇参考文献 + 10 篇相似 + 25 篇施引文献）共 101 节点 / 118 边。
 > 同一份数据在本地实测：总边长 28456 → 11516 px，**交叉数 6 → 0**，hub 处最小夹角 0.0° → 2.9°。
 
-## 加载方式（唯一入口）
+## 安装
 
-Research Cat 是**动态 Cordis 插件** —— 两个 function body，靠 `harness` builtins 注册工具与界面，因此**无法 `npm install`**。加载方式是让**你自己的 DSH agent** 把它注册进当前进程：
+### A. 作为可安装插件（推荐）
+
+Research Cat 是一个标准 DSH 插件包：host 半边（`exports["."]`）在宿主进程里注册 `research_cat` 工具与 `/dsh-research-cat` 路由，client 半边（`exports["./client"]`）在 web GUI 里注册侧栏图标与中央面板。**没有构建步骤**——两半边都是普通 JS，client 按宿主契约调用 `window.__ModuleLoader__.load`，React 由 shell 的 `require` 提供。
+
+```bash
+dsh plugin --profile <你的 profile> add link:/path/to/dsh-research-cat
+```
+
+> ⚠️ **`desktop` profile 由 DSH 桌面应用独占管理**，CLI 会直接拒绝（源码里的 `rejectElectronProfile`）。桌面用户请走应用内的**插件市场**，来源填 `link:/path/to/dsh-research-cat`（dshmarket 支持 `link:` / `file:` 来源）。非桌面 profile 用上面那条命令即可。
+
+### B. 作为动态 Cordis 插件（`dynamic/`）
+
+`dynamic/` 保留了纯动态插件形态的源码（两个 function body）。它**不需要安装**，但只活在进程内存里、**重启即消失**，加载还要过 agent 授权：
 
 ```
-请读取这个仓库的 host.js 与 client.js，然后：
-1) 调用 cordis_define：plugin.kind = "new"，code.host 用 host.js 全文，code.client 用 client.js 全文
+请读取 dynamic/host.js 与 dynamic/client.js，然后：
+1) 调用 cordis_define：plugin.kind = "new"，code.host 用 dynamic/host.js 全文，code.client 用 dynamic/client.js 全文
 2) 用返回的 pluginId / packageId 调用 cordis_run，mode = "run"
 ```
 
-**前提**：你的 DSH 会话具备动态 Cordis 插件能力（`cordis_define` / `cordis_run` / `cordis_inspect_self`）——即运行在带 cordis 能力的 agent 预设下。
+客户端半边会返回 `awaiting-approval`，需要在会话里的 **Run 卡片上点一次授权**（单勾只授权当前版本，**双勾**可授权后续版本）。
 
-客户端半边会返回 `awaiting-approval`，需要在会话里的 **Run 卡片上点一次授权**（单勾只授权当前版本，**双勾**可授权该插件后续版本，之后改版不再询问）。
+**前提**：你的 DSH 会话具备动态 Cordis 插件能力（`cordis_define` / `cordis_run` / `cordis_inspect_self`）。
 
-加载成功后：左侧栏第 20 位出现 **Research Cat** 图标；agent 多出一个 `research_cat` 工具。
+两种形态装好后都一样：左侧栏出现 **Research Cat** 图标；agent 多出一个 `research_cat` 工具。
 
 ## 用法
 
@@ -57,13 +69,14 @@ Research Cat 是**动态 Cordis 插件** —— 两个 function body，靠 `harn
 
 ## 重要限制（先读这段）
 
-1. **不是持久插件。** 动态 Cordis 插件只活在当前 DSH 进程里，**进程一重启就消失**（本项目的开发过程中 4 小时内遇到两次）。重启后重新走一遍上面的加载步骤即可，源码就是本仓库这两个文件。
-2. **插件自身不落盘。** 两个半边都没有 `fs` / storage service / `localStorage` 调用，全部状态是 `apply()` 闭包里的 5 个 Map/数组（`nodes` / `links` / `catalog` / `seeds` / `cache`）。但要注意：**通过 agent 工具发起的检索会进入 DSH 的会话记录**；只在面板里操作则不经过模型、不进会话记录。
-3. 面板里的 collection 与整张图都随进程重启清空（内存态）。
+1. **内存态、不落盘。** 两个半边都没有 `fs` / storage service / `localStorage` 调用，全部状态是 `apply()` 里的 5 个 Map/数组（`nodes` / `links` / `catalog` / `seeds` / `cache`）。进程重启后 collection 与整张图都会清空。
+   - 形态 A（可安装插件）**本身是持久的**：装一次之后重启仍在，只是图是空的。
+   - 形态 B（动态插件）连插件定义都不持久：重启后要重新加载。
+2. **通过 agent 工具发起的检索会进入 DSH 的会话记录**；只在面板里操作则不经过模型、不进会话记录。
 
 ## 布局算法
 
-不是力导向调参，而是可解释的径向排布（`client.js` 的 `computeLayout`）：
+不是力导向调参，而是可解释的径向排布（`src/client.js` 的 `computeLayout`）：
 
 1. **找 hub**：度最大的节点（平手时优先种子、再比被引）→ 放到画布正中心
 2. **BFS 分层**：每层占一个半径带
@@ -77,10 +90,18 @@ Research Cat 是**动态 Cordis 插件** —— 两个 function body，靠 `harn
 ## 目录结构
 
 ```
-host.js                    后端：8 个 handler（面板用）+ research_cat 工具（agent 用）+ OpenAlex 访问
-client.js                  前端：侧栏图标 / 主面板 / Run 卡片三个 slot
-plugin.json                清单：slot、handler、工具名、配额、布局参数与实测指标
-lab/                       离线实验台（见下）
+package.json               插件清单：exports / dsh.bundle.patch / dsh.client
+cordis.patch.yml           组合补丁：把本插件的行 insert 进 profile
+src/
+  index.js                 host 入口（name / inject / apply）
+  graph.js                 引擎：OpenAlex 查询 + 内存图 + 8 个操作
+  routes.js                /dsh-research-cat JSON 路由（面板用，带 loopback 围栏）
+  tools.js                 research_cat agent 工具（defineTool）
+  client.js                browser 半边：__ModuleLoader__ 契约 + 侧栏 + 面板
+  config.js                配置解析
+test/local.mjs             本地验证：加载器契约 / 引擎真实检索 / host 接线（33 项）
+dynamic/                   纯动态插件归档（host.js / client.js / plugin.json）
+lab/                       离线布局实验台（见下）
 preview/                   布局对比渲染图
 ```
 

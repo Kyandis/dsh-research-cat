@@ -1,0 +1,24 @@
+# dsh-research-cat bundle patch: mounts the Research Cat row into the profile
+# roster.
+#
+# The node half (package `exports["."]`) runs inside the host process: it
+# registers the `research_cat` agent tool and the /dsh-research-cat JSON routes
+# the panel talks to. The `dsh.client` declaration in package.json makes the
+# browser half (`exports["./client"]`) load in the web GUI, where it registers
+# the sidebar entry and the centre-column panel.
+#
+# Activate with:  dsh plugin --profile <profile> add link:/path/to/dsh-research-cat
+- insert:
+    - id: dsh-research-cat
+      name: dsh-research-cat
+      config:
+        # Expose the research_cat agent tool (search/add/expand/list).
+        exposeTool: true
+        # Contact address sent to OpenAlex's polite pool.
+        mailto: "dsh-research-cat@localhost"
+        # Hard ceiling on papers in one graph.
+        maxNodes: 400
+        # Neighbours pulled per expand call (references / related), and the
+        # number of most-cited citing papers.
+        maxBatch: 30
+        maxCitations: 25

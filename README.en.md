@@ -16,22 +16,31 @@ search → add to collection → expand (references / citations / related) → e
 
 > These are **not screenshots** — they are offline layout renders produced by `lab/render.mjs` (approximate theme colours, so the layout itself is what you judge). The data is real: two seeds contributing 29 references + 10 related + 25 citing papers each, 101 nodes / 118 links. Measured on that graph: total edge length 28456 → 11516 px, edge crossings **6 → 0**, minimum hub angle 0.0° → 2.9°.
 
-## How to load it
+## Install
 
-Research Cat is a **dynamic Cordis plugin** — two function bodies that register a Tool and UI through the `harness` builtins. It therefore **cannot be `npm install`ed**; you load it by asking **your own DSH agent** to register it into the running process:
+### A. As an installable plugin (recommended)
+
+Research Cat is a standard DSH plugin package: the host half (`exports["."]`) registers the `research_cat` tool and the `/dsh-research-cat` routes inside the host process, and the client half (`exports["./client"]`) registers the sidebar entry and the centre-column panel in the web GUI. **There is no build step** — both halves are plain JS, and the client half calls `window.__ModuleLoader__.load` exactly as the shell requires, with React supplied by the shell's `require`.
+
+```bash
+dsh plugin --profile <your-profile> add link:/path/to/dsh-research-cat
+```
+
+> ⚠️ **The `desktop` profile is managed exclusively by the DSH desktop application** — the CLI refuses it outright (`rejectElectronProfile` in the launcher). Desktop users should install through the in-app **plugin market** with the source `link:/path/to/dsh-research-cat` (dshmarket supports `link:` and `file:` sources). Other profiles can use the command above.
+
+### B. As a dynamic Cordis plugin (`dynamic/`)
+
+`dynamic/` keeps the pure dynamic-plugin form (two function bodies). It needs no install, but it lives only in process memory — **it disappears on a DSH restart** — and loading it goes through an agent approval:
 
 ```
-Read host.js and client.js from this repository, then:
-1) call cordis_define with plugin.kind = "new", code.host = the full contents of host.js,
-   code.client = the full contents of client.js
+Read dynamic/host.js and dynamic/client.js, then:
+1) call cordis_define with plugin.kind = "new", code.host = dynamic/host.js, code.client = dynamic/client.js
 2) call cordis_run with the returned pluginId / packageId, mode = "run"
 ```
 
-Requirement: your DSH session exposes the dynamic Cordis plugin tools (`cordis_define`, `cordis_run`, `cordis_inspect_self`), i.e. it runs under an agent preset with that capability.
+The client half returns `awaiting-approval`: approve it once on the Run card (a double check mark also authorises future versions). It requires a session that exposes the dynamic Cordis plugin tools.
 
-The client half returns `awaiting-approval`: approve it once on the Run card in the conversation (a double check mark also authorises future versions of the same plugin).
-
-Once loaded: a **Research Cat** icon appears in the sidebar (order 20) and the agent gains a `research_cat` tool.
+Either way you end up with a **Research Cat** entry in the sidebar and a `research_cat` tool on the agent.
 
 ## Usage
 
@@ -57,13 +66,14 @@ Once loaded: a **Research Cat** icon appears in the sidebar (order 20) and the a
 
 ## Important limitations
 
-1. **Not a persistent plugin.** Dynamic Cordis plugins live only in the current DSH process and **disappear on a DSH restart** (twice within four hours during this project's development). Just load it again from these same two files.
-2. **The plugin writes nothing to disk.** Neither half calls `fs`, a storage service or `localStorage`; all state is five in-memory containers (`nodes`, `links`, `catalog`, `seeds`, `cache`) inside the `apply()` closure. Note however that retrieval driven through the agent Tool does land in the harness session transcript; panel-only use never passes through the model.
-3. The collection and graph are memory-only and reset with the process.
+1. **In-memory, nothing on disk.** Neither half calls `fs`, a storage service or `localStorage`; all state is five in-memory containers (`nodes`, `links`, `catalog`, `seeds`, `cache`) inside `apply()`. A restart empties the collection and the graph.
+   - Form A (installable plugin) **is itself persistent**: install once and it survives restarts — only the graph is empty.
+   - Form B (dynamic plugin) does not even persist its definition: it must be loaded again after a restart.
+2. **Retrieval driven through the agent Tool lands in the harness session transcript**; panel-only use never passes through the model.
 
 ## Layout algorithm
 
-Not physics tuning — an explainable radial arrangement (`computeLayout` in `client.js`):
+Not physics tuning — an explainable radial arrangement (`computeLayout` in `src/client.js`):
 
 1. **Hub**: the highest-degree node (ties prefer seeds, then citations) goes to the centre.
 2. **BFS layers** from the hub; one radius band per layer.
@@ -77,11 +87,19 @@ Node size and brightness are normalised by citation count; node stroke encodes t
 ## Repository layout
 
 ```
-host.js        backend: 8 panel handlers + the research_cat agent Tool + OpenAlex access
-client.js      frontend: sidebar icon / main panel / Run card — three slots
-plugin.json    manifest: slots, handlers, tool name, quotas, layout params and measurements
-lab/           offline layout lab
-preview/       before/after renders
+package.json               plugin manifest: exports / dsh.bundle.patch / dsh.client
+cordis.patch.yml           composition patch: inserts this plugin's row into a profile
+src/
+  index.js                 host entry (name / inject / apply)
+  graph.js                 engine: OpenAlex queries + in-memory graph + 8 operations
+  routes.js                /dsh-research-cat JSON routes (panel side, loopback-fenced)
+  tools.js                 the research_cat agent tool (defineTool)
+  client.js                browser half: __ModuleLoader__ contract + sidebar + panel
+  config.js                config resolution
+test/local.mjs             local checks: loader contract / live engine / host wiring (33)
+dynamic/                   the pure dynamic-plugin archive (host.js / client.js / plugin.json)
+lab/                       offline layout lab
+preview/                   before/after renders
 ```
 
 ## `lab/` — change the layout and see it immediately
@@ -95,9 +113,18 @@ node lab/render.mjs graph.json new after
 
 `lab/computeLayout.new.js` is the same literal that runs in the plugin, and `lab/render.mjs` prints total edge length, longest edge, minimum hub angle and the **true crossing count** — objective numbers for deciding whether a change actually helped.
 
+## Verify locally
+
+```bash
+node test/local.mjs
+```
+
+It checks the Loader contract (one registration, only `react` requested, `name`/`inject`/`apply` exported), the config defaults, and the engine against the **live** OpenAlex API (search, add, expand, dedup, remove, clear, bad input). The host wiring checks call `apply()` with a stub context and assert that exactly one tool and one route prefix are registered.
+
 ## Roadmap
 
-- [ ] Ship an **installable** build (TypeScript + tsdown, `dsh.bundle.patch`, a separate client bundle) so that `npm i` plus a line in the profile's `dsh.profile.bundles` is enough — and it survives restarts.
+- [x] Ship an installable plugin package (host tools + routes, browser half on the Loader contract)
+- [ ] Publish to the DSH plugin market so installation is a single click
 
 ## License
 
