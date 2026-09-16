@@ -1,0 +1,6 @@
+node_modules/
+graph.json
+graph*.json
+*.png.out
+*.log
+.DS_Store

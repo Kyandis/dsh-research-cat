@@ -1,0 +1,71 @@
+{
+  "name": "Research Cat — citation network explorer",
+  "kind": "dynamic Cordis plugin for DeepSeek Harness (runtime-only; not an installable npm package)",
+  "halves": [
+    "host",
+    "client"
+  ],
+  "load": {
+    "code.host": "host.js",
+    "code.client": "client.js",
+    "steps": "cordis_define (kind=new, code.host from host.js, code.client from client.js) then cordis_run (mode=run) and approve the client half in the Run card"
+  },
+  "model_tool": "research_cat",
+  "host_handlers": [
+    "state",
+    "search",
+    "addSeed",
+    "removeSeed",
+    "expand",
+    "expandAll",
+    "details",
+    "clear"
+  ],
+  "client_slots": [
+    {
+      "slot": "sidebar.panellist",
+      "id": "research-cat",
+      "order": 20,
+      "label": "Research Cat"
+    },
+    {
+      "slot": "main",
+      "key": "research-cat"
+    },
+    {
+      "slot": "tool.view.cordis",
+      "key": "self"
+    }
+  ],
+  "data_source": "OpenAlex REST API (https://api.openalex.org) - public, no API key required",
+  "limits": {
+    "searchPerPage": 20,
+    "referencesPerExpand": 30,
+    "relatedPerExpand": 30,
+    "citationsPerExpand": 25,
+    "maxNodes": 400
+  },
+  "layout": {
+    "algorithm": "hub-centred radial: pick the highest-degree node as the hub, BFS layers from it, one radius band per layer, split each layer into contiguous angular sectors by relationship role (references / citations / related), order each sector by citedBy desc, fill rings using capacity = floor(arc * r / minSpacing) with a half-slot stagger between adjacent rings, then separate hub spokes to a minimum angle",
+    "params": {
+      "minSpacing": "46 for <=80 nodes, 38 for <=150, else 30",
+      "ringGap": "minSpacing + 30",
+      "maxRadius": "min(BOX_W, BOX_H) / 2 - 26",
+      "sectorGap": "0.2 rad between role sectors",
+      "minSpokeAngle": "0.05 rad"
+    },
+    "measured": {
+      "single_seed_55_nodes": "total edge length 15659 -> 10124, longest edge 370 -> 248 px, hub min angular gap 0.4deg -> 2.9deg",
+      "dual_seed_101_nodes": "total edge length 28456 -> 11516, edge crossings 6 -> 0, hub min angular gap 0.0deg -> 2.9deg"
+    }
+  },
+  "visual_semantics": {
+    "node_size_and_brightness": "normalised by citation count (sqrt of share of the graph maximum)",
+    "node_stroke": "relationship to the collection: references (brand) / citations (warn) / related (tertiary)",
+    "labels": "always on for the seeds and the top 18 papers by citations, all labels at zoom >= 1.8",
+    "selection": "selecting a node highlights its incident edges and dims unrelated nodes and edges"
+  },
+  "persistence": "none. All state lives in five in-memory containers (nodes, links, catalog, seeds, cache) inside the apply() closure; neither half calls fs, a storage service or localStorage, and the harness web service defines no disk cache. Note: retrieval driven through the agent Tool does land in the harness session transcript, while panel-only use does not pass through the model.",
+  "runtime": "dynamic Cordis plugins live only in the current DSH process; a DSH restart removes the plugin and it must be loaded again",
+  "license": "MIT"
+}
