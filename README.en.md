@@ -27,6 +27,15 @@ dsh plugin --profile <your-profile> add link:/path/to/dsh-research-cat
 ```
 
 > ⚠️ **The `desktop` profile is managed exclusively by the DSH desktop application** — the CLI refuses it outright (`rejectElectronProfile` in the launcher). Desktop users should install through the in-app **plugin market** with the source `link:/path/to/dsh-research-cat` (dshmarket supports `link:` and `file:` sources). Other profiles can use the command above.
+>
+> **Manual path verified to work on desktop** (this is how this repository was installed):
+> 1. in the profile directory (`~/.dsh/profiles/desktop`) run `pnpm add "link:/path/to/dsh-research-cat"`
+> 2. add `"dsh-research-cat"` to that profile's `dsh.profile.bundles` in `package.json`
+> 3. restart DSH
+>
+> The difference: **the market hot-mounts on install** (its log prints `[dsh-market] hot-mounted <plugin>`), while a manual install loads on the next start.
+>
+> How to tell it loaded: the sidebar occupant's `registrant` should be **`dsh-research-cat`**. If it starts with `dyn/`, that is a dynamic plugin a session registered temporarily — not this package.
 
 ### B. As a dynamic Cordis plugin (`dynamic/`)
 
@@ -124,6 +133,7 @@ It checks the Loader contract (one registration, only `react` requested, `name`/
 ## Roadmap
 
 - [x] Ship an installable plugin package (host tools + routes, browser half on the Loader contract)
+- [x] Install it into a `desktop` profile and verify tool, sidebar entry, panel and a clean log across a restart
 - [ ] Publish to the DSH plugin market so installation is a single click
 
 ## License

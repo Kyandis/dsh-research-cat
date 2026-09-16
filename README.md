@@ -28,6 +28,15 @@ dsh plugin --profile <你的 profile> add link:/path/to/dsh-research-cat
 ```
 
 > ⚠️ **`desktop` profile 由 DSH 桌面应用独占管理**，CLI 会直接拒绝（源码里的 `rejectElectronProfile`）。桌面用户请走应用内的**插件市场**，来源填 `link:/path/to/dsh-research-cat`（dshmarket 支持 `link:` / `file:` 来源）。非桌面 profile 用上面那条命令即可。
+>
+> **桌面版实测可行的手动路径**（本仓库就是这么装上并验证的）：
+> 1. 在 profile 目录（如 `~/.dsh/profiles/desktop`）执行 `pnpm add "link:/path/to/dsh-research-cat"`
+> 2. 往该 profile 的 `package.json` 里，把 `"dsh-research-cat"` 加进 `dsh.profile.bundles`
+> 3. 重启 DSH
+>
+> 两者差别：**在市场里点装会当场热挂载**（日志里会打 `[dsh-market] hot-mounted <plugin>`）；手动装则要重启一次才加载。
+>
+> 加载成功后可自查：侧栏 occupant 的 `registrant` 应是 **`dsh-research-cat`**；若以 `dyn/` 开头，那是会话里临时注册的动态插件，不是这个包。
 
 ### B. 作为动态 Cordis 插件（`dynamic/`）
 
@@ -119,7 +128,9 @@ node lab/render.mjs graph.json new after                # 新布局 + 指标
 
 ## Roadmap
 
-- [ ] 打包成**可安装插件**（TypeScript + tsdown 构建、`dsh.bundle.patch`、独立的 client 产物），让 `npm i` + 加进 profile 的 `dsh.profile.bundles` 即可使用，且**重启不丢**
+- [x] 打包成**可安装插件**：`dsh.bundle.patch` + `dsh.client`，client 半边按 Loader 契约手写，**不需要构建步骤**
+- [x] 装进 `desktop` profile 并验证：工具、侧栏、面板、日志无报错，且**重启后仍在**
+- [ ] 发布到 DSH 插件市场，让安装变成一次点击
 
 ## License
 
