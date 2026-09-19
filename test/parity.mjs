@@ -23,7 +23,7 @@
 // src/ is imported dynamically with try/catch on purpose: a missing module must
 // become a failed AC, not a process-level import crash.
 
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -456,6 +456,57 @@ section('config (AC-A5-1, AC-A5-6, AC-A2-4)')
       resolveConfig({ apiKey: '  k-123  ' }).apiKey === 'k-123' &&
       resolveConfig({ apiKey: 42 }).apiKey === '',
     defaults === null ? 'missing' : JSON.stringify({ dflt: defaults.apiKey }))
+}
+
+/* ------------------------------------------------------- store hardening */
+
+section('store hardening (F2 stale temps / F3 metadata lag / F5 write before open)')
+{
+  if (createStore === null) {
+    check('F5 a write before open() never touches the existing file', false, 'createStore missing')
+    check('F2 stale .tmp files are swept on open()', false, 'createStore missing')
+    check('F3 the persisted meta.writes describes the write that produced the file', false, 'createStore missing')
+  } else {
+    const dir = mkdtempSync(join(tmpdir(), 'dsh-rc-store-'))
+    const file = join(dir, 'library.json')
+    const existing = {
+      version: 1, savedAt: null, records: {}, collections: [], memberships: [],
+      recentlyFound: [], annotations: {}, seq: 0, meta: { writes: 7 },
+    }
+    writeFileSync(file, JSON.stringify(existing, null, 2), 'utf8')
+    const before = readFileSync(file, 'utf8')
+
+    const store = createStore({ storePath: file, snapshot: () => Object.assign({}, existing, { seq: 99 }) })
+
+    // F5: mutate + flush BEFORE open() must leave the file untouched — an
+    // unopened store has not read the library, so writing would replace it.
+    store.saveNow()
+    await store.flush()
+    check('F5 a write before open() never touches the existing file',
+      readFileSync(file, 'utf8') === before && store.writeCount() === 0,
+      'writes=' + store.writeCount())
+
+    // F2: a temp file left behind by a hard exit is swept when the store opens.
+    const stale = file + '.tmp-99999-deadbeef'
+    writeFileSync(stale, '{"partial":', 'utf8')
+    await store.open()
+    check('F2 stale .tmp files are swept on open()', existsSync(stale) === false, String(stale))
+
+    // F5b: whatever was deferred before open() lands afterwards.
+    await store.flush()
+    check('F5b the write deferred before open() lands after open()',
+      store.writeCount() >= 1 && readFileSync(file, 'utf8') !== before,
+      'writes=' + store.writeCount())
+
+    // F3: the file must carry the metadata of the write that produced it — it
+    // used to be stamped after the rename, so it lagged one write behind.
+    const persisted = JSON.parse(readFileSync(file, 'utf8'))
+    check('F3 the persisted meta.writes describes the write that produced the file',
+      persisted.meta.writes === store.writeCount() && typeof persisted.savedAt === 'string' && persisted.savedAt.length > 0,
+      JSON.stringify({ persistedWrites: persisted.meta.writes, actualWrites: store.writeCount(), savedAt: persisted.savedAt }))
+
+    await store.close()
+  }
 }
 
 /* ---------------------------------------------------------- pure helpers */

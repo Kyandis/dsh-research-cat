@@ -298,6 +298,10 @@ export function createStore(options) {
   let degraded = false
   let lastError = null
   let writes = 0
+  /** Set once the library file has actually been read (see doWrite's guard). */
+  let opened = false
+  /** A write refused before open(); flushed as soon as open() completes. */
+  let deferredWrite = false
   let pending = false
   let dirty = false
   let debounceTimer = null
@@ -310,6 +314,13 @@ export function createStore(options) {
   }
 
   async function writeAtomic(data) {
+    // Stamp the document BEFORE serialising. Stamping after the rename made the
+    // file on disk carry the *previous* write's meta.writes/savedAt, so a reader
+    // saw metadata that lagged one write behind the content (F3).
+    const nextWrites = writes + 1
+    data.meta = isPlainObject(data.meta) ? data.meta : {}
+    data.meta.writes = nextWrites
+    data.savedAt = new Date().toISOString()
     const text = JSON.stringify(data, null, 2)
     await fs.mkdir(dirname(path), { recursive: true })
     const tmp = path + '.tmp-' + process.pid + '-' + Math.random().toString(36).slice(2, 8)
@@ -325,10 +336,7 @@ export function createStore(options) {
         await fs.writeFile(tmp, text, { encoding: 'utf8', mode: 0o600 })
       }
       await fs.rename(tmp, path)
-      writes += 1
-      data.meta = isPlainObject(data.meta) ? data.meta : {}
-      data.meta.writes = writes
-      data.savedAt = new Date().toISOString()
+      writes = nextWrites
     } catch (error) {
       if (handle !== null) { try { await handle.close() } catch { /* already failing */ } }
       try { await fs.unlink(tmp) } catch { /* nothing to clean */ }
@@ -338,6 +346,14 @@ export function createStore(options) {
 
   async function doWrite() {
     if (degraded) return
+    if (!opened) {
+      // Never write before open(): an unopened store has not read the existing
+      // file, so writing now would silently replace a real library with a fresh
+      // one. Defer instead — open() flushes whatever was deferred (F5).
+      dirty = true
+      deferredWrite = true
+      return
+    }
     try {
       await writeAtomic(snapshot())
       dirty = false
@@ -410,7 +426,43 @@ export function createStore(options) {
    *
    * @returns {Promise<{ data: any, storeError: string | null, repaired: boolean }>}
    */
+  /**
+   * Delete temp files a hard exit may have left behind (`<path>.tmp-*`).
+   * Best effort: cleanup must never stop the library from opening (F2).
+   */
+  async function sweepStaleTemps() {
+    if (typeof fs.readdir !== 'function') return
+    let entries
+    try {
+      entries = await fs.readdir(dirname(path))
+    } catch {
+      return
+    }
+    if (!Array.isArray(entries)) return
+    const prefix = path + '.tmp-'
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i]
+      if (typeof entry !== 'string') continue
+      const candidate = join(dirname(path), entry)
+      if (candidate.indexOf(prefix) !== 0) continue
+      try { await fs.unlink(candidate) } catch { /* best effort */ }
+    }
+  }
+
   async function open() {
+    try {
+      await sweepStaleTemps()
+      return await readLibrary()
+    } finally {
+      opened = true
+      if (deferredWrite) {
+        deferredWrite = false
+        void enqueue()
+      }
+    }
+  }
+
+  async function readLibrary() {
     let text
     try {
       text = await fs.readFile(path, 'utf8')
