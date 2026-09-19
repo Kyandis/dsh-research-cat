@@ -3,22 +3,46 @@
 #
 # The node half (package `exports["."]`) runs inside the host process: it
 # registers the `research_cat` agent tool and the /dsh-research-cat JSON routes
-# the panel talks to. The `dsh.client` declaration in package.json makes the
-# browser half (`exports["./client"]`) load in the web GUI, where it registers
-# the sidebar entry and the centre-column panel.
+# the panel talks to, and it owns the persistent library. The `dsh.client`
+# declaration in package.json makes the browser half (`exports["./client"]`)
+# load in the web GUI, where it registers the sidebar entry and the
+# centre-column panel.
 #
 # Activate with:  dsh plugin --profile <profile> add link:/path/to/dsh-research-cat
+#
+# Every key below is optional; the values are the frozen defaults from
+# docs/rr-parity-spec.md §6.3, kept explicit here so a deployment can see and
+# tune the quotas without reading the source.
 - insert:
     - id: dsh-research-cat
       name: dsh-research-cat
       config:
-        # Expose the research_cat agent tool (search/add/expand/list).
+        # Expose the research_cat agent tool (search / add / expand / list /
+        # collections / recent / annotate / export).
         exposeTool: true
-        # Contact address sent to OpenAlex's polite pool.
+        # Contact address sent to OpenAlex's polite pool. Present on every
+        # request the engine makes.
         mailto: "dsh-research-cat@localhost"
-        # Hard ceiling on papers in one graph.
-        maxNodes: 400
-        # Neighbours pulled per expand call (references / related), and the
-        # number of most-cited citing papers.
-        maxBatch: 30
-        maxCitations: 25
+        # Search results per page.
+        searchPerPage: 50
+        # Neighbours pulled per expand for references / related / earlier /
+        # author. Metadata is fetched in chunks of 50 ids, so 100 means two
+        # OpenAlex requests instead of a silent truncation at 50.
+        maxBatch: 100
+        # Most-cited citing papers pulled per citations / later expand.
+        maxCitations: 100
+        # Hard ceiling on papers in one graph. Reaching it refuses further
+        # expansion and asks the user to clear first.
+        maxNodes: 1000
+        # Seeds per collection (the Research Rabbit free tier allows 50).
+        maxSeeds: 50
+        # Concurrent OpenAlex requests: 4 keeps the polite pool happy while
+        # still expanding a 50-seed collection quickly.
+        concurrency: 4
+        # storePath is deliberately NOT set here: the engine resolves it in
+        # three levels — an explicit value (relative paths resolve against the
+        # DSH home), else ${DSH_HOME}/research-cat/library.json, else
+        # ~/.dsh/research-cat/library.json — so a deployment with a custom
+        # DSH_HOME lands in the right place without hardcoding a home
+        # directory. Set an absolute path here only if you need a different
+        # location.

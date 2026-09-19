@@ -5,8 +5,13 @@
  * same-origin `fetch`, one JSON envelope per call — no package-private RPC.
  *
  * Every route is behind a loopback fence. The panel only reads public OpenAlex
- * data and in-memory state, never workspace files, but a LAN-exposed DSH must
+ * data and the local library, never workspace files, but a LAN-exposed DSH must
  * not let an unpaired device drive outbound requests either.
+ *
+ * Envelope (unchanged from the previous round):
+ * `{ok:true, value}` on success, `{ok:false, error:{code, message}}` on failure,
+ * with `code` one of `invalid` (bad arguments, HTTP 400), `operation`
+ * (business/network failure, HTTP 200), `forbidden` (fence).
  *
  * @module dsh-research-cat/routes
  */
@@ -112,6 +117,14 @@ export function registerResearchCatRoutes(ctx, library) {
     }
 
     const str = (key) => (typeof payload[key] === 'string' && payload[key] !== '' ? payload[key] : undefined)
+    const required = (key, what) => {
+      const value = str(key)
+      if (value === undefined) {
+        badRequest(res, what)
+        return undefined
+      }
+      return value
+    }
 
     try {
       switch (pathname) {
@@ -119,40 +132,67 @@ export function registerResearchCatRoutes(ctx, library) {
           send(res, 200, { ok: true, value: library.state() })
           return
         case ROUTE_PREFIX + '/search': {
-          const query = str('query')
-          if (query === undefined) return badRequest(res, 'search needs a query')
-          send(res, 200, { ok: true, value: await library.search(query) })
+          const query = required('query', 'search needs a query')
+          if (query === undefined) return
+          send(res, 200, { ok: true, value: await library.search(query, payload.filters, payload.page) })
           return
         }
         case ROUTE_PREFIX + '/addSeed': {
-          const id = str('id')
-          if (id === undefined) return badRequest(res, 'addSeed needs an id')
+          const id = required('id', 'addSeed needs an id')
+          if (id === undefined) return
           send(res, 200, { ok: true, value: await library.addSeed(id) })
           return
         }
         case ROUTE_PREFIX + '/removeSeed': {
-          const id = str('id')
-          if (id === undefined) return badRequest(res, 'removeSeed needs an id')
+          const id = required('id', 'removeSeed needs an id')
+          if (id === undefined) return
           send(res, 200, { ok: true, value: library.removeSeed(id) })
           return
         }
         case ROUTE_PREFIX + '/expand': {
-          const id = str('id')
-          if (id === undefined) return badRequest(res, 'expand needs an id')
-          send(res, 200, { ok: true, value: await library.expand(id, str('kind')) })
+          const id = required('id', 'expand needs an id')
+          if (id === undefined) return
+          send(res, 200, {
+            ok: true,
+            value: await library.expand(id, str('kind'), { authorId: str('authorId'), filters: payload.filters }),
+          })
           return
         }
         case ROUTE_PREFIX + '/expandAll':
-          send(res, 200, { ok: true, value: await library.expandAll() })
+          send(res, 200, {
+            ok: true,
+            value: await library.expandAll({ kinds: payload.kinds, filters: payload.filters, authorId: str('authorId') }),
+          })
           return
         case ROUTE_PREFIX + '/details': {
-          const id = str('id')
-          if (id === undefined) return badRequest(res, 'details needs an id')
+          const id = required('id', 'details needs an id')
+          if (id === undefined) return
           send(res, 200, { ok: true, value: await library.details(id) })
           return
         }
+        case ROUTE_PREFIX + '/authors': {
+          const id = required('id', 'authors needs an id')
+          if (id === undefined) return
+          send(res, 200, { ok: true, value: await library.authors(id) })
+          return
+        }
+        case ROUTE_PREFIX + '/collections':
+          send(res, 200, { ok: true, value: library.collections(payload) })
+          return
+        case ROUTE_PREFIX + '/recentlyFound':
+          send(res, 200, { ok: true, value: library.recentlyFound(payload) })
+          return
+        case ROUTE_PREFIX + '/annotate': {
+          const id = required('id', 'annotate needs an id')
+          if (id === undefined) return
+          send(res, 200, { ok: true, value: library.annotate(payload) })
+          return
+        }
+        case ROUTE_PREFIX + '/export':
+          send(res, 200, { ok: true, value: library.export(payload) })
+          return
         case ROUTE_PREFIX + '/clear':
-          send(res, 200, { ok: true, value: library.clear() })
+          send(res, 200, { ok: true, value: library.clear(payload.scope) })
           return
         default:
           res.writeHead(404)
@@ -160,7 +200,8 @@ export function registerResearchCatRoutes(ctx, library) {
       }
     } catch (error) {
       // Operation failures are results, not crashes: the panel shows the message.
-      send(res, 200, { ok: false, error: { code: 'operation', message: messageOf(error) } })
+      const code = error !== null && error !== undefined && error.code === 'invalid' ? 'invalid' : 'operation'
+      send(res, code === 'invalid' ? 400 : 200, { ok: false, error: { code: code, message: messageOf(error) } })
     }
   }
 

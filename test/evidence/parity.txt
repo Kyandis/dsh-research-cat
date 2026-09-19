@@ -1,0 +1,170 @@
+
+== config (AC-A5-1, AC-A5-6, AC-A2-4) ==
+  PASS AC-A5-1 resolveConfig defaults are the frozen quotas
+  PASS AC-A5-1 invalid quota values fall back to the defaults
+  PASS AC-A5-6 every quota key is overridable from config
+  PASS AC-B1-8 storePath default resolves under DSH_HOME (no hardcoded home)
+  PASS AC-A5-6 a relative storePath is resolved against DSH_HOME
+  PASS AC-A5-1 resolveConfig exposes exactly the nine frozen keys
+
+== chunking + filters (AC-A5-3, AC-A4-2..8) ==
+  PASS AC-A5-3 chunkIds splits 100 ids into 2 requests of 50
+  PASS AC-A5-3 chunkIds normalises, de-duplicates and drops non-work ids
+  PASS AC-A4-2 yearFrom/yearTo is a closed interval and year 0 never passes a bounded side
+  PASS AC-A4-2 yearFrom > yearTo is rejected as invalid (not an empty success)
+  PASS AC-A4-3 venue matches case-insensitively as a substring; null venue never matches
+  PASS AC-A4-3 venue:"" is treated as not provided
+  PASS AC-A4-4 isOa / isRetracted compare the boolean record fields
+  PASS AC-A4-5 minCitations is an inclusive lower bound
+  PASS AC-A4-5 sort:"year" returns a year-descending sequence
+  PASS AC-A4-7 unknown keys, wrong types and negative bounds are rejected with code invalid
+  PASS AC-A4-8 filtering is deterministic: the same input yields the same id sequence
+
+== BibTeX export (AC-A7-2..8) ==
+  PASS AC-A7-2 bibtexOf renders a parseable document
+  PASS AC-A7-2 the entry count matches the exported record count
+  PASS AC-A7-2 every entry carries the record title and year
+  PASS AC-A7-3 authors join with " and " and an authorless record omits the field
+  PASS AC-A7-4 every entry has a doi or a url
+  PASS AC-A7-5 citation keys are unique
+  PASS AC-A7-5 two exports of the same input are byte-identical
+  PASS AC-A7-6 the type map is fixed (article/book/incollection/inproceedings/misc)
+  PASS AC-A7-6 the rendered entries use the mapped types
+  PASS AC-A7-7 LaTeX specials are escaped and no raw & survives in a field
+  PASS AC-A7-7 non-ASCII characters stay UTF-8 (not \uXXXX)
+  PASS AC-A7-8 an empty input yields count 0 and a legal comment-only document
+  PASS AC-A7-8 missing title/year fields still produce a parseable entry
+
+== persistence (AC-B1-1..8) ==
+  PASS AC-B1-1 a restart on the same storePath keeps collections, members, notes, tags, colour and Recently Found
+  PASS AC-B3-7 Recently Found survives the restart
+  PASS AC-B1-1 the graph itself is empty after a restart (library persisted, graph temporary)
+  PASS AC-B1-1 /state reports the library storePath and no storeError on a healthy file
+  PASS AC-B1-2 an injected write failure leaves the old complete JSON on disk (never a truncated file)
+  PASS AC-B1-2 no temporary file is left behind after a failed write
+  PASS AC-B1-6 clear:"graph" empties the graph + seeds but keeps the library; clear:"library" resets and syncs the file
+  PASS AC-B1-3 a newer version is backed up as .bak and starts an empty library with storeError
+  PASS AC-B1-4 a corrupt file is backed up as .bak and starts an empty library with storeError
+  PASS AC-B1-4 an empty file is backed up as .bak and starts an empty library with storeError
+  PASS AC-B1-5 three quick writes collapse into one disk write (debounced) and flush is a no-op afterwards
+  PASS AC-B1-7 the library loads and /state answers with no network; only network operations fail
+  PASS AC-B1-8 an unwritable storePath degrades to an in-memory library with a readable storeError
+
+== exploration axes (AC-A1, AC-A2, AC-A3, AC-A4, AC-A5) ==
+  PASS AC-A5-2 search requests per-page=50 and reports total/hasMore
+  PASS AC-A5-7 every OpenAlex request carries mailto
+  PASS AC-A4-7 an illegal page number is rejected as invalid
+  PASS AC-A5-3 references expand chunks 100 ids into 2 requests and returns more than 50
+  PASS AC-A5-4 citations expand returns up to 100 records
+  PASS AC-A1-1 authors lists A-ids in authorships order
+  PASS AC-A1-1 authors resolves an ORCID to an author id when OpenAlex leaves author.id null
+  PASS AC-A1-1 authors drops entries that have neither an author id nor an ORCID (failure path)
+  PASS AC-A1-2 kind:author links the seed to the author works
+  PASS AC-A1-3 author works come back in citedBy-descending order
+  PASS AC-A1-4 kind:author without authorId is invalid and names the available author ids
+  PASS AC-A1-5 author results honour filters and the batch quota
+  PASS AC-A1-6 (host prerequisite) the authors route + author axis exist for the panel click-through
+  PASS AC-A3-1 earlier returns only references older than the seed
+  PASS AC-A3-2 later returns only citing papers newer than the seed
+  PASS AC-A3-3 same-year and year-0 neighbours are excluded; an empty result is still ok
+  PASS AC-A3-4 each seed uses its own year as the boundary
+  PASS AC-A3-6 earlier/later honour filters and the batch quota
+  PASS AC-A3-5 (host prerequisite) earlier/later axes return data for the panel buttons
+  PASS AC-A4-1 every axis accepts the same filters object
+  PASS AC-A4-6 found is the filtered count and considered the pre-filter count
+  PASS AC-A4-7 an unknown filter key on an axis is invalid
+  PASS AC-A2-1 addSeed accepts 50 seeds and rejects the 51st with the limit in the message
+  PASS AC-A2-2 expandAll runs every seed over the requested axes
+  PASS AC-A2-7 (host prerequisite) expandAll reports perSeed/skipped for the panel Auto-expand
+  PASS AC-A2-3 one failing seed does not stop the batch
+  PASS AC-A2-5 expandAll is idempotent
+  PASS AC-A2-4 concurrent OpenAlex requests stay at or below the configured 4
+  PASS AC-A2-6 a small maxNodes stops the batch with skipped>0 and never exceeds the ceiling
+  PASS AC-A5-5 expanding at the graph ceiling is rejected with a readable "clear first" message
+
+== collections, Recently Found, annotations, export (AC-B2, AC-B3, AC-B4, AC-A7) ==
+  PASS AC-B2-1 collections list is empty (system collection only) before any create
+  PASS AC-B2-2 create nests three levels and rejects an unknown parent
+  PASS AC-B2-3 rename keeps the tree and allows duplicate names
+  PASS AC-B2-4 AC-B2-5 deleting a collection cascades its subtree but keeps the papers
+  PASS AC-B2-6 one paper can belong to several collections
+  PASS AC-B2-7 batch save reports skipped ids instead of silently succeeding
+  PASS AC-B2-7 batch remove reports skipped ids instead of silently succeeding
+  PASS AC-B2-8 itemCount and itemCountDeep match the memberships
+  PASS AC-B2-9 a cyclic persisted tree is repaired instead of crashing
+  PASS AC-B2-11 (host prerequisite) the collections tool action covers list/create/rename/delete/save/remove
+  PASS AC-B2-10 (host prerequisite) collections list carries ids + itemCount for the panel tree
+  PASS AC-B3-1 AC-B3-2 Recently Found starts empty and addSeed lands first
+  PASS AC-B3-3 expanding puts new nodes into Recently Found
+  PASS AC-B3-4 saving into a collection removes it from Recently Found; removing brings it back
+  PASS AC-B3-5 clearing Recently Found keeps the papers and the collections
+  PASS AC-B3-9 (host prerequisite) recentlyFound promote moves ids into a collection
+  PASS AC-B3-8 (host prerequisite) /state carries records so the panel can title Recently Found entries
+  PASS AC-B3-6 the 500-entry Recently Found ceiling evicts the oldest deterministically
+  PASS AC-B4-1 AC-B4-3 annotations support partial updates and de-duplicate tags in order
+  PASS AC-B4-2 AC-B4-3 oversized notes and tag lists are rejected as invalid
+  PASS AC-B4-4 an unknown colour is rejected and the message lists the legal values
+  PASS AC-B4-4 color:null clears the colour
+  PASS AC-B4-5 AC-B4-6 annotations reject unknown works and are visible in /state
+  PASS AC-B4-7 (host prerequisite) the annotate route carries note/tags/colour for the panel editor
+  PASS AC-B4-8 (host prerequisite) the annotate tool action echoes note/tags/colour
+  PASS AC-B4-9 annotations never leak into the BibTeX export
+  PASS AC-A7-1 AC-A7-8 export renders the graph and a collection, and empty input is count 0
+  PASS AC-A7-1 an unsupported export format is rejected as invalid
+
+== routes and the agent tool (AC-A0-2..A0-7, AC-A0-5) ==
+  PASS AC-A0-2 the host mounts one /dsh-research-cat prefix route and one research_cat tool
+  PASS AC-A5-7 (route) OpenAlex requests from routes carry mailto
+  PASS AC-A0-2 /expand keeps the three original kinds and their response keys
+  PASS AC-A0-4 /state keeps graph + counts and only adds keys
+  PASS AC-A0-6 the loopback fence and the JSON content-type guard still reject
+  PASS AC-A0-7 /clear empties the graph and the seed membership
+  PASS AC-A1-1 (route) /authors returns A-ids
+  PASS AC-A4-7 (route) an invalid filter is a 400 with code invalid
+  PASS AC-A4-2 (route) yearFrom > yearTo is a 400 with code invalid
+  PASS AC-B2-1 (route) /collections op:list answers the tree
+  PASS AC-B3-1 (route) /recentlyFound op:list answers a string array
+  PASS AC-B4-1 (route) /annotate answers the updated annotation
+  PASS AC-A0-5 (host prerequisite) all six axes are reachable through /expand
+  PASS AC-A0-6 an unknown route still answers 404
+  PASS AC-A7-1 (route) /export returns {format,count,bibtex}
+  PASS AC-A7-9 (host prerequisite) /export gives the panel a downloadable BibTeX document
+  PASS AC-A7-1 (route) an unsupported export format is a 400 with code invalid
+  PASS AC-A0-3 the tool enum only grows (four original + four new actions)
+  PASS AC-A0-3 RESULT_SCHEMA is still {ok,text} with additionalProperties:false
+  PASS AC-A0-3 the tool keeps the four original actions and their wording
+  PASS AC-A0-3 the original four actions keep their exact text contract
+  PASS AC-A0-3 the tool schema still rejects an action outside the enum
+  PASS AC-B2-11 the collections tool action answers a readable tree with ids
+  PASS AC-B3-9 the recent tool action answers with a count and ids
+  PASS AC-B4-8 the annotate tool action echoes note, tags and colour
+  PASS AC-A7-10 the export tool action answers BibTeX text within the view limit
+  PASS AC-A7-10 a long export is truncated with a note and never cuts mid-entry
+  PASS AC-A4-9 (host prerequisite) the panel gets filters, considered and found to render 筛选前/后
+
+== client timeline layout via @parity marker blocks (AC-A6) ==
+  PASS AC-A6-2 timeline x is non-decreasing in year and equal for equal years
+  PASS AC-A6-3 timeline y is monotone in citedBy (more citations -> higher on screen)
+  PASS AC-A6-5 year===0 nodes are kept and placed in a dedicated band left of every dated node
+  PASS AC-A6-4 the axis exposes non-empty year and citation tick arrays plus the unknown band
+  PASS AC-A6-7 the radial layout is preserved as a pure function and places every node
+  PASS AC-A6-1 the panel dispatches between the radial and timeline layouts without a reload
+  PASS AC-A6-6 (host prerequisite) the six axes carry their own label, stroke and dash in the panel
+  DEFER AC-A6-6 panel step: the six edge styles render and the toggles hide them (t5 panel evidence)
+  DEFER AC-A6-1 panel step: switching Radial <-> Timeline keeps the selection (t5 panel evidence)
+
+== C-tier exclusion (AC-C-1) ==
+  PASS AC-C-1 no C-tier feature term appears in the host source
+  PASS AC-C-1 the route table is exactly the frozen set (no C-tier route slipped in)
+  DEFER AC-C-1 panel step: the panel entry list contains no C-tier entry (t5 review)
+  DEFER AC-A0-1 regression: node test/local.mjs keeps its baseline checks green (t5 evidence)
+  DEFER AC-B1-9 README drops the in-memory-only wording and documents the library file (t8/t5 evidence)
+
+== coverage ==
+  PASS the suite references every frozen AC id (checks or explicit DEFER)
+
+== network smoke (not counted; t5 runs the networked acceptance) ==
+  PASS (5 live results)
+
+deferred (panel-step / t5): AC-A6-6 panel step: the six edge styles render and the toggles hide them (t5 panel evidence) | AC-A6-1 panel step: switching Radial <-> Timeline keeps the selection (t5 panel evidence) | AC-C-1 panel step: the panel entry list contains no C-tier entry (t5 review) | AC-A0-1 regression: node test/local.mjs keeps its baseline checks green (t5 evidence) | AC-B1-9 README drops the in-memory-only wording and documents the library file (t8/t5 evidence)
+parity: 139 passed, 0 failed

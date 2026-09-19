@@ -1,0 +1,35 @@
+=== hashes after 2026-09-19T08:13:22Z ===
+src/client.js 5798e5982a20815bc0c1448ad5b8715b5a465e9e3630cdac8cdfff3ed4074b9a
+   mtime=2026-09-19T15:19:58 size=121987
+lab/client-check.mjs 8e07c9857402804c81bb5c70d40205366f576a158a216e278f81afdca1ce5056
+   mtime=2026-09-19T15:23:02 size=50119
+test/client.mjs 00e8f40740a9c049c7c69fbe08cff7710955e6eccbd1dc3a64c7d8a1afb12a6e
+   mtime=2026-09-19T15:21:50 size=17660
+test/parity.mjs 62ac5a6b6328c551af1308bed93480fbfaa3fc23c325bf7c76345763b7b115b8
+   mtime=2026-09-19T14:50:27 size=98965
+test/local.mjs 56675ba3ad81d61e50b9f8208d9b6042eb52e25f447545fd7305000eb107a443
+   mtime=2026-09-19T16:10:14 size=77130
+--- git status ---
+ M src/client.js
+ M src/config.js
+ M src/graph.js
+ M src/index.js
+ M src/routes.js
+ M src/tools.js
+ M test/local.mjs
+?? docs/
+?? lab/client-check.mjs
+?? src/bibtex.js
+?? src/store.js
+?? test/client.mjs
+?? test/parity.mjs
+--- real library dir (outside repo) ---
+total 528
+drwxr-xr-x   5 depengwang  staff    160 Sep 19 15:32 .
+drwx------@ 18 depengwang  staff    576 Sep 19 13:56 ..
+-rw-------   1 depengwang  staff  87656 Sep 19 15:32 library.json
+-rw-------   1 depengwang  staff  87703 Sep 19 15:22 library.json.tmp-60403-rlyp6u
+-rw-------   1 depengwang  staff  87703 Sep 19 15:32 library.json.tmp-70142-ic86rh
+--- real library fingerprint now ---
+1eda7992be8a8b54c66ad473e2bd935f679622a66cdb29ddbba4a5edd01dc9b9  /Users/depengwang/.dsh/research-cat/library.json
+mtime=2026-09-19T15:32:40 size=87656

@@ -1,0 +1,105 @@
+  PASS A0: radial layout stays byte-identical to the 9a1bd7d baseline where neither quirk can trigger (3 datasets)
+  PASS t11 snapshot: clamp-affected layouts match the intentionally updated digests (4 datasets, up to 260 nodes)
+  PASS t10 fix: every seed of a multi-seed star is placed and only the hub stays on the centre (2/3/5/50 seeds)
+  PASS t11 fix: no node pair is closer than its two radii on 120/260/500/1000-node graphs
+       120 nodes: worst margin 7.13, overlapping pairs 0
+       260 nodes: worst margin 23.10, overlapping pairs 0
+       500 nodes: worst margin 4.08, overlapping pairs 0
+       1000 nodes: worst margin 4.15, overlapping pairs 0
+  PASS t11 viewBox: a grown layout yields a bigger frame that still covers every node
+  PASS layoutExtent keeps the exact 0 0 1200 800 frame for a small layout
+  PASS radial layout defaults to the 1200x800 box when no box is passed
+  PASS radial layout handles the three new edge kinds without losing nodes versus legacy input
+  PASS timeline places every node, including year=0 records
+  PASS timeline x is non-decreasing for a year-ordered listing
+  PASS timeline: older year is left of newer, same year shares one x
+  PASS timeline y is non-increasing in citedBy (more citations = higher on screen)
+  PASS timeline: the year-unknown band sits left of every dated node
+  PASS timeline axis has min/max + intermediate year ticks and citation ticks
+  PASS axis tick x agrees with the layout x for that year
+  PASS year-unknown flag is reported to the axis
+  PASS collection forest supports >=3 nesting levels
+  PASS collection forest keeps the system collection as a root
+  PASS collection forest promotes missing parents and loses nothing
+  PASS collection forest breaks parent/child cycles deterministically
+--- Loader + slot contract ---
+  PASS client registers exactly one Loader module
+  PASS client only requires react from the shell
+  PASS client exports name/inject/apply
+  PASS sidebar.panellist + main are registered
+  PASS slot id/key are research-cat
+--- rendered panel: new surfaces ---
+  PASS renders without throwing
+  PASS Graph + Library tabs exist
+  PASS six relationship kinds are independently switchable
+  PASS Radial is the default layout and Timeline is available
+  PASS legend lists the seed plus all six edge kinds
+  PASS edge stylesheet gives each kind its own rule
+  PASS filter panel exposes year range + venue + OA + retracted + min citations + sort
+  PASS timeline view renders its axis and keeps every node
+  PASS timeline: same-year nodes share x, older is left of newer
+  PASS switching back to Radial keeps the panel alive
+--- rendered panel: legacy interactions ---
+  PASS existing controls still present: Clear / Auto-expand / Re-layout / Fit
+  PASS one node circle per paper
+  PASS citation scaling keeps radii ordered (300 > 100 > 50 > 0 citations)
+  PASS role colouring: seed transparent, citations warn token, isolated border token
+  PASS annotation colour is painted on the node ring
+  PASS label policy: seeds and top-cited nodes are labelled
+  PASS radial view draws both mock edges with their kinds
+  PASS switching a kind off stops drawing that edge
+  PASS switching it back restores the edge
+  PASS selecting a node opens details with abstract, note editor and 7 colour dots
+  PASS detail offers the five exploration entries
+  PASS /authors list is rendered as clickable author-axis entries
+  PASS selection highlight: selected node stroke is the label-primary token
+  PASS selection fades the node that is neither selected nor adjacent
+  PASS clicking an author calls /expand {kind:"author", authorId}
+  PASS Earlier calls /expand {kind:"earlier"}
+--- rendered panel: zoom / drag / toolbar ---
+  PASS Re-layout recomputes positions without dropping nodes
+  PASS pan (drag) still moves the canvas transform
+  PASS Fit resets the transform
+  PASS zoom + still scales the canvas
+  PASS node dragging still moves the node
+--- rendered panel: library surfaces ---
+  PASS Library tab shows Recently Found rows from library records
+  PASS collection tree renders all 5 collections including three nested levels
+  PASS collection tree shows names and direct/deep counts
+  PASS nesting is visible as increasing indentation
+  PASS the system collection offers no delete/rename buttons while user rows do
+  PASS export entries exist for the active collection and for everything
+  PASS the library file path is shown
+  PASS no storage warning when storeError is empty
+  PASS /export is called with format=bibtex
+  PASS Recently Found offers promote into a collection
+  PASS promote sends the ticked id and target collection
+  PASS every non-system row offers a new subcollection
+  PASS creating a subcollection sends {op:"create", name, parentId}
+  PASS renaming sends {op:"rename", id, name}
+  PASS delete asks for a second click first
+  PASS the second click deletes the collection
+  PASS activating a subcollection lists its members from collection.ids
+  PASS a collection without member ids degrades to counts + hint instead of breaking
+--- rendered panel: notes, search, filters, clear ---
+  PASS note editor renders for the selected paper
+  PASS blurring the note calls /annotate with a partial update
+  PASS a colour dot sends the frozen colour id
+  PASS search sends the query and reports considered/total
+  PASS filters are sent to /search as the frozen key set
+  PASS result rows offer Add and a save-to-collection picker
+  PASS picking a collection calls /collections {op:"save", ids:[...]}
+  PASS Auto-expand leaves kinds to the host defaults (no kinds key) and carries the active filters
+  PASS Clear calls /clear with an empty body (9a1bd7d semantics)
+  PASS after Clear the canvas is empty and the empty state returns
+--- scenario B: six edge kinds + storage warning + /authors fallback ---
+  PASS all six edge kinds render with distinct classes
+  PASS switching the Earlier kind off removes exactly that edge
+  PASS storeError is surfaced as a warning bar
+  PASS /authors being unavailable falls back to the record authorIds
+--- scenario C: 120-node graph, viewBox follows the layout ---
+  PASS scenario C renders all 120 nodes
+  PASS scenario C: viewBox grew past the baseline 1200x800 and still covers every node
+  PASS scenario C: rendered circles do not overlap (distance >= r1 + r2)
+
+client-check: all checks passed

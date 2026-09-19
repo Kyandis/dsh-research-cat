@@ -1,0 +1,166 @@
+  PASS client registers exactly one Loader module
+  PASS loader id is the package name
+  PASS client only requires react from the shell
+  PASS client exports name
+  PASS client injects slots
+  PASS client exports apply
+  PASS config defaults
+  PASS AC-A5-1 the frozen config default set is complete and resolves storePath under DSH_HOME
+  PASS config overrides + bad values fall back
+  PASS AC-A5-6 every quota key can be overridden and the override is recorded
+  PASS AC-B1-8 storePath level 2: DSH_HOME decides the default path (no hardcoded home)
+  PASS AC-B1-8 storePath level 1: an explicit absolute storePath wins over DSH_HOME
+  PASS AC-B1-8 storePath level 1: a relative storePath resolves against DSH_HOME
+  PASS AC-B1-8 storePath level 3: with DSH_HOME unset the default falls back to <homedir>/.dsh (pure resolution, no IO)
+  PASS uniqueWorkIds normalises and de-duplicates
+  PASS AC-B1-8 the sealed engine storePath is the explicit config path under os.tmpdir()
+  PASS fresh state is empty
+  FAIL search reaches OpenAlex -> OpenAlex answered HTTP 429.
+  FAIL AC-A5-2 search asks OpenAlex for per-page=50 and returns at most 50 rows -> {"searchUrls":["https://api.openalex.org/works?search=graph+neural+networks&select=id%2Cdoi%2Ctitle%2Cdisplay_name%2Cpublication_year%2Ccited_by_count%2Ctype%2Cprimary_location%2Copen_access%2Cis_retracted&per-page=50&page=1&sort=cited_by_count%3Adesc&mailto=dsh-research-cat%40localhost","https://api.openalex.org/works?search=graph+neural+networks&select=id%2Cdoi%2Ctitle%2Cdisplay_name%2Cpublication_year%2Ccited_by_count%2Ctype%2Cprimary_location%2Copen_access%2Cis_retracted&per-page=50&page=1&sort=cited_by_count%3Adesc&mailto=dsh-research-cat%40localhost"],"rows":null}
+  PASS AC-A5-7 every OpenAlex request carries the polite-pool mailto
+  PASS blank query is rejected
+  NOTE the live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL search returns OpenAlex matches -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL search results carry work ids -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL addSeed collects the paper -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL addSeed reports the record -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL expand pulls references -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL expand respects the batch cap -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A5-3 references beyond OpenAlex's 50-id filter limit are fetched in chunks (found > 50 needs >= 2 requests) -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A5-3 the chunking helper splits 100 ids into 2 chunks and never truncates silently -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL re-expanding adds nothing (dedup) -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL expand pulls citing papers -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A5-4 citations expand returns at most maxCitations -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL details returns authors + abstract -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL details reconstructs the abstract -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL state snapshots nodes and links -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A1-1 /authors returns the probe paper's OpenAlex author ids in authorships order -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A1-1 the probe paper's authorships carry author.id === null upstream, so the ORCID fallback is the legal path -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A1-2 the author axis links the probe paper to the author's works (kind author, source = probe id) -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A1-3 the author axis returns works with citedBy monotonically non-increasing -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A1-4 kind author without authorId is rejected with a usable hint (never silently picks the first author) -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A3-1 earlier returns only nodes strictly older than the seed (edge kind earlier) -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL AC-A3-2 later returns only nodes strictly newer than the seed (edge kind later) -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL removeSeed drops the seed and its exclusive neighbours -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL clear empties everything -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  FAIL bad work id is rejected -> live OpenAlex block aborted: OpenAlex answered HTTP 429.
+  PASS AC-A2-1 addSeed accepts 50 seeds and rejects the 51st with the ceiling in the message
+  PASS AC-A2-1 the seed ceiling is configurable (maxSeeds=2 rejects the third seed with the ceiling in the message)
+  PASS AC-A2-4 expandAll keeps at most 4 concurrent OpenAlex requests for 3 seeds x 2 axes
+  PASS AC-A2-5 expandAll is idempotent: the second run adds nothing and does not change counts.papers
+  PASS AC-A2-3 a failing seed is isolated: perSeed carries the error, the other seed still expands, skipped counts it
+  PASS AC-A5-5 expanding past maxNodes is refused with a readable "clear it" message and never half-writes
+  PASS AC-A2-6 expandAll reports skipped > 0 at the ceiling without throwing and keeps counts.papers <= maxNodes
+  PASS failure path: an OpenAlex 429 (over quota) is retried once and then surfaced as an operation error, never a crash or a silent pass
+  PASS failure path: an OpenAlex 404 is mapped to an invalid error without retrying
+  PASS failure path: a truncated OpenAlex body becomes a readable operation error
+  PASS AC-A3-3 earlier excludes the same-year and year===0 neighbours (strict comparison)
+  PASS AC-A3-3 an empty earlier/later result returns found:0 as a success, not an error
+  PASS AC-A1-5 the author axis obeys filters and the batch cap
+  PASS AC-A4-6 found reports the post-filter count, never the unfiltered count
+  PASS AC-A4-4 isOa/isRetracted filter on the new boolean record fields (never null)
+  PASS AC-A4-4 isRetracted:true returns only retracted works and the field is a real boolean
+  PASS AC-A4-3 venue matches case-insensitively by substring and venue:"" means "not provided"
+  PASS AC-A4-8 filtering is deterministic: the same input yields the same id sequence
+  PASS AC-A4-7 unknown keys, non-booleans, negative minimums and illegal sort are all invalid errors
+  PASS AC-A4-2 yearFrom > yearTo is invalid instead of an empty success
+  PASS AC-A4-2 yearFrom/yearTo are closed intervals (boundary years included)
+  PASS normalizeFilters/applyFilters are pure and shared by every axis
+  PASS AC-A1-1 the ORCID fallback is deterministic: richest profile wins, ties go to the smaller author id
+  PASS AC-A1-2 an author-axis expand works offline through the same code path
+  PASS AC-B1-1 a restart on the same storePath restores collections, memberships, annotations and Recently Found field-for-field
+  PASS AC-B1-1 the exploration graph itself is temporary: a restart has 0 papers/links while the saved collection membership survives
+  PASS AC-B3-7 Recently Found survives the restart
+  PASS AC-B1-2 an injected write failure leaves the old complete JSON on disk (never a truncated file)
+  PASS AC-B1-2 no temporary file is left behind after a failed write
+  PASS AC-B1-2 the failed write is surfaced as a storeError instead of crashing
+  PASS AC-B1-3 AC-B1-4 an unknown version or a corrupt/empty/truncated file starts from an empty library with a readable storeError and keeps a .bak
+  PASS AC-B1-3 the current version constant is 1
+  PASS AC-B1-5 five quick writes collapse into one disk write (debounced) and flush is a no-op afterwards
+  PASS AC-B1-7 without network the persisted library still loads and only network operations fail
+  PASS AC-B1-8 an unwritable storePath degrades to an in-memory library with a readable storeError (the plugin still loads)
+  PASS AC-B2-1 collections list returns the tree shape and the system collection
+  PASS AC-B2-2 collections nest at least three levels deep and a missing parent is refused
+  PASS AC-B2-3 rename keeps the tree shape and duplicate names are allowed
+  PASS AC-B2-6 AC-B2-7 one paper can belong to several collections and unknown ids are reported as skipped, never silently accepted
+  PASS AC-B2-8 itemCount counts direct members and itemCountDeep counts the subtree
+  PASS AC-B2-4 AC-B2-5 deleting a parent cascades its subtree but never deletes the papers
+  PASS AC-B2-4 after deleting its only user collection the paper is back in Recently Found
+  PASS AC-B3-1 AC-B3-2 Recently Found is a de-duplicated, most-recent-first list and a fresh addSeed lands first
+  PASS AC-B3-4 promoting into a collection removes the id from Recently Found; removing it from the last collection brings it back
+  PASS AC-B3-5 clearing Recently Found keeps the library articles and collection members
+  PASS AC-B4-1 a partial annotate update leaves tags and colour untouched
+  PASS AC-B4-2 a note over 10000 characters is rejected, not truncated
+  PASS AC-B4-3 tags are de-duplicated in order, capped at 20, and 41-character tags are rejected
+  PASS AC-B4-4 the colour enum is fixed, an illegal colour lists the legal values, and null clears it
+  PASS AC-B4-6 annotating an unknown work id is refused (never invents a paper)
+  PASS AC-A7-2 the BibTeX output parses into the same number of entries and every entry has title + year
+  PASS AC-A7-2 parsed titles/years match the graph data
+  PASS AC-A7-3 author is joined with " and " and never emitted empty
+  PASS AC-A7-4 every entry carries doi or url (url always points at OpenAlex)
+  PASS AC-A7-5 citation keys are unique, deterministic and byte-identical across two exports
+  PASS AC-A7-6 the type map is the frozen one
+  PASS AC-A7-7 LaTeX specials are escaped and non-ASCII stays untouched
+  PASS AC-A7-8 an empty export is a legal comment-only BibTeX document with count 0
+  PASS AC-A7-1 export returns {format, count, bibtex} for the graph and for a collection
+  PASS AC-B4-9 annotations never leak into the BibTeX export
+  PASS host name matches the package
+  PASS host injects tools + webServer
+  PASS apply registers exactly one agent tool
+  PASS tool is named research_cat
+  PASS tool exposes the four actions
+  PASS AC-A0-3 the four original actions are still the first four enum entries (additive change only)
+  PASS AC-A0-3 the tool output schema is still {ok, text}
+  PASS AC-A0-3 the kind enum keeps the three original axes first and adds the three new ones
+  PASS action is a required parameter
+  PASS apply registers one route prefix
+  PASS route path is the one the panel calls
+  PASS route handler is callable
+  PASS AC-B1-8 the host half uses the explicit storePath under os.tmpdir()
+  PASS tool list action answers before anything is collected
+  PASS schema rejects an action outside the enum
+  PASS AC-A0-4 the tool list wording still reports the collection and graph totals
+  PASS exposeTool:false registers no tool
+  PASS exposeTool:false still registers the routes
+  PASS AC-A0-4 /state returns the frozen graph/counts/library envelope over real HTTP
+  PASS failure path: an illegal work id is HTTP 400 invalid
+  PASS failure path: an empty search query is HTTP 400 invalid
+  PASS failure path: a nonexistent collection is HTTP 400 invalid
+  PASS AC-A4-2 route probe: yearFrom > yearTo is rejected as invalid, not an empty success
+  PASS AC-B4-4 route probe: an illegal colour lists the frozen enum
+  PASS AC-B4-6 route probe: annotating an unknown id is invalid
+  PASS AC-A7-1 route probe: /export returns {format, count, bibtex}
+  PASS AC-A7-8 route probe: an empty export is a success with count 0
+  PASS AC-A0-6 route probe: a cross-site Origin is refused with 403 forbidden (loopback fence intact)
+  PASS AC-A0-6 route probe: a non-JSON content-type is refused with 415
+  PASS route probe: GET /dsh-research-cat answers the identity probe
+  PASS AC-A0-2 route probe: expand still accepts references/citations/related and returns the frozen field set
+  PASS the unknown-route 404 behaviour is unchanged
+  PASS AC-A0-7 route probe: /clear empties papers and seeds
+  PASS failure path: expanding past maxNodes is HTTP 200 with ok:false and code operation (a result, not a crash)
+  PASS AC-C-1 no C-tier feature term appears in the host or browser source
+  PASS AC-C-1 the only "share" occurrences are the citation-share math variable and one English comment, not a sharing feature
+  PASS AC-C-1 the route table is exactly the frozen set (no C-tier route slipped in)
+  PASS AC-C-2 the design doc references spec §8 and declares the C tier as not implemented / user-decision
+  PASS AC-A0-5 the panel ships a distinct style rule for each of the six edge kinds
+  PASS AC-A0-5 every edge kind has an independent toggle and hidden kinds are filtered out of the drawn links
+  PASS AC-A1-6 the detail panel lists clickable authors that call the author axis
+  PASS AC-A3-5 the detail panel offers both Earlier and Later entries
+  PASS AC-A4-9 the filter panel exposes all seven frozen filter keys and reports considered/total
+  PASS AC-A6-1 Radial and Timeline toggles only switch layout state (no reload, no selection reset)
+  PASS AC-A7-9 the panel downloads a .bib file with a stable research-cat-<collection|all>-<date>.bib name
+  PASS AC-B2-10 the collection tree offers create-subcollection, rename, two-step delete and activation
+  PASS AC-B3-8 Recently Found rows offer multi-select promote and a one-click clear
+  PASS AC-B4-7 the detail panel has a note editor, a tag input, seven colour dots and a "No colour" button
+  GAP  AC-B2-10 gap: the collection tree offers copy-into (save) but no "move" action -> finding F7 — see test/AC-EVIDENCE.md
+  PASS AC-A2-7 (partial) Auto-expand calls the new expandAll and surfaces skipped/failed request counts
+  GAP  AC-A2-7 gap: Auto-expand never displays the number of seeds expanded (only added/failed/skipped) -> finding F6 — see test/AC-EVIDENCE.md
+  PASS AC-A0-1 every pre-t5 check label is still present and the suite only grew
+  PASS coverage: every frozen spec AC id is referenced by test/local.mjs or test/parity.mjs
+  PASS seal: the user's real ~/.dsh/research-cat/library.json was neither created nor modified by this run
+
+sealed run: DSH_HOME=/var/folders/qy/tzfphq9d0y9gjvff7z8407nw0000gn/T/dsh-research-cat-local-9a6IgV/home  engineStore=/var/folders/qy/tzfphq9d0y9gjvff7z8407nw0000gn/T/dsh-research-cat-local-9a6IgV/engine/library.json
+real library fingerprint: (absent)
+reported gaps (not counted as passes): AC-B2-10 gap: the collection tree offers copy-into (save) but no "move" action | AC-A2-7 gap: Auto-expand never displays the number of seeds expanded (only added/failed/skipped)
+
+local: 26 check(s) FAILED

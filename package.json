@@ -1,7 +1,7 @@
 {
   "name": "dsh-research-cat",
-  "version": "1.0.0",
-  "description": "Research Cat — a citation-network explorer panel and agent tool for DeepSeek Harness. Searches OpenAlex, grows an in-memory citation graph, and draws it on a hub-centred radial layout.",
+  "version": "1.1.0",
+  "description": "Research Cat — a citation-network explorer panel and agent tool for DeepSeek Harness. Searches OpenAlex, expands six axes (references / citations / similar / author / earlier / later), keeps a persistent local library (nested collections, Recently Found, notes, tags, colours), exports BibTeX, and draws the graph on a radial or timeline layout.",
   "type": "module",
   "license": "MIT",
   "main": "./src/index.js",
@@ -12,6 +12,7 @@
   },
   "files": [
     "src",
+    "docs",
     "cordis.patch.yml",
     "README.md",
     "README.en.md",
@@ -34,7 +35,9 @@
     "deepseek-harness",
     "openalex",
     "citation-graph",
-    "literature-review"
+    "literature-review",
+    "collections",
+    "bibtex"
   ],
   "engines": {
     "node": ">=18"

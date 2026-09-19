@@ -1,0 +1,18 @@
+== A0: old(9a1bd7d) vs new(worktree); the claimed digest must match the OLD output ==
+  PASS star, seed is the hub (24 nodes, spin 0)
+       old=c652299929f47b64348d169b new=c652299929f47b64348d169b claimed=c652299929f47b64348d169b keys=24/24
+  PASS star, seed is the hub (40 nodes, spin 2)
+       old=75ffd0c808c3b02072e84917 new=75ffd0c808c3b02072e84917 claimed=75ffd0c808c3b02072e84917 keys=40/40
+  PASS random legacy graph, no seeds, clamp-free (24 nodes, spin 0)
+       old=30a01314e1db4a1b5a6658fd new=30a01314e1db4a1b5a6658fd claimed=30a01314e1db4a1b5a6658fd keys=24/24
+== post-t10/t11: the claimed digest must match NEW, and OLD must differ (the defect was real) ==
+  PASS 3 seeds, 18 nodes, spin 0 oldKeys=16/18 newKeys=18
+       old=230b3c9453ab6c57f3c6b467 new=5fa04849c8fccd2b41f5c37c claimed=5fa04849c8fccd2b41f5c37c
+  PASS 3 seeds, 120 nodes, spin 1 oldKeys=118/120 newKeys=120
+       old=57e4e4a05c7bae015a71e046 new=6dbc4c45c16df0b62df8bcea claimed=6dbc4c45c16df0b62df8bcea
+  PASS 3 seeds, 260 nodes, spin 3 oldKeys=257/260 newKeys=260
+       old=b74d00bb139cc65e41efd37a new=f9db7acb16a6491da1d3bd42 claimed=f9db7acb16a6491da1d3bd42
+  PASS no seeds, 60 nodes, spin 0 oldKeys=60/60 newKeys=60
+       old=750ed67c6301bc436c4ff588 new=55c832cfcf67cb32410023a0 claimed=55c832cfcf67cb32410023a0
+
+t5-a0-baseline: all independent checks passed

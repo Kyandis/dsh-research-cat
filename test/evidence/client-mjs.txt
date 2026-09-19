@@ -1,0 +1,48 @@
+--- multi-seed star graphs (t10 fix) ---
+  PASS 2-seed star: every seed gets a real place entry (no canvas-centre fallback)
+  PASS 2-seed star: only the hub sits on the canvas centre
+  PASS 2-seed star: seeds keep a positive pairwise distance
+  PASS 3-seed star: every seed gets a real place entry (no canvas-centre fallback)
+  PASS 3-seed star: only the hub sits on the canvas centre
+  PASS 3-seed star: seeds keep a positive pairwise distance
+  PASS 5-seed star: every seed gets a real place entry (no canvas-centre fallback)
+  PASS 5-seed star: only the hub sits on the canvas centre
+  PASS 5-seed star: seeds keep a positive pairwise distance
+  PASS 10-seed star: every seed gets a real place entry (no canvas-centre fallback)
+  PASS 10-seed star: only the hub sits on the canvas centre
+  PASS 10-seed star: seeds keep a positive pairwise distance
+  PASS 50-seed star: every seed gets a real place entry (no canvas-centre fallback)
+  PASS 50-seed star: only the hub sits on the canvas centre
+  PASS 50-seed star: seeds keep a positive pairwise distance
+--- overlap fix: 120 / 260 nodes (before: worst margin -31.860 / -37.169, min distance 2.07 / 0.006) ---
+       120-node random graph (3 seeds): worst margin 7.129, worst pair W8/W38 (distance 44.248, radii sum 37.118), before the fix -31.860
+  PASS 120-node random graph (3 seeds): every node is placed
+  PASS 120-node random graph (3 seeds): no pair is closer than its two radii (margin >= 0)
+  PASS 120-node random graph (3 seeds): rings grew past the old clamp radius 374 instead of stacking
+       260-node random graph (3 seeds): worst margin 23.096, worst pair W84/W103 (distance 60.191, radii sum 37.095), before the fix -37.169
+  PASS 260-node random graph (3 seeds): every node is placed
+  PASS 260-node random graph (3 seeds): no pair is closer than its two radii (margin >= 0)
+  PASS 260-node random graph (3 seeds): rings grew past the old clamp radius 374 instead of stacking
+--- overlap fix at the A5 ceiling (1000 nodes) and 500 nodes ---
+  PASS 500-node random graph: no overlapping pair
+  PASS 1000-node random graph: no overlapping pair
+--- A0 regression: byte-identical to the 9a1bd7d baseline ---
+  PASS unchanged vs baseline: star with the seed as hub (24 nodes, spin 0)
+  PASS unchanged vs baseline: star with the seed as hub (40 nodes, spin 2)
+  PASS unchanged vs baseline: random legacy graph with no seeds, clamp-free (24 nodes, spin 0)
+  PASS unchanged since t10: t10 5-node snapshot (3 seeds, spin 0)
+--- intentionally updated snapshots (t11) ---
+  PASS post-t11 snapshot: random legacy graph, 3 seeds (18 nodes, spin 0)
+  PASS post-t11 snapshot: random legacy graph, 3 seeds (120 nodes, spin 1)
+  PASS post-t11 snapshot: random legacy graph, 3 seeds (260 nodes, spin 3)
+  PASS post-t11 snapshot: random legacy graph, no seeds (60 nodes, spin 0) — was an A0 case until its outer ring hit the clamp
+  PASS every snapshot that was already frozen before t11 really moved (no "edit until green")
+  PASS every snapshot places every node (the 9a1bd7d drop signature is gone)
+--- layoutExtent: the SVG viewBox follows the layout ---
+  PASS empty layout keeps the baseline frame
+  PASS a layout inside the frame keeps the exact 0 0 1200 800 viewBox
+  PASS a grown layout yields a bigger viewBox that still covers every node
+  PASS empty input still returns an empty placement
+  PASS the default box stays 1200x800
+
+client-radial: all checks passed

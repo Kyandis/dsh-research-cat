@@ -1,0 +1,10 @@
+F5 before: records=1 memberships=1
+F5 after : records=1 memberships=1 savedAt=null
+F5 before keys=["W100"] after keys=["W200"] membershipsAfter=["W200"]
+F5 VERDICT: CONFIRMED — the pre-existing library content was replaced by the new empty-instance write
+F3 writeCount()=3  file meta.writes=2  file savedAt=2026-09-19T08:33:52.669Z  records=3
+F3 VERDICT: CONFIRMED — on-disk meta.writes lags the real write count
+F2 dir=["library.json","library.json.tmp-99999-orphan"]  main file parses: records=1
+F2 VERDICT: an orphan .tmp can remain while the main file stays complete (AC-B1-2 not violated)
+
+probe root: /var/folders/qy/tzfphq9d0y9gjvff7z8407nw0000gn/T/t5-findings-EN1LHP
