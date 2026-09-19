@@ -350,6 +350,7 @@ action 枚举冻结为 `search | add | expand | list | collections | recent | an
 |---|---|---|
 | `exposeTool` | `true` | 既有 |
 | `mailto` | `dsh-research-cat@localhost` | 既有，必须保留在每个 OpenAlex 请求上 |
+| `apiKey` | 空字符串（无 key） | **§11 变更新增**：OpenAlex API key。空表示无 key（请求不带 `api_key=`）；非空时每个请求都带上。用于摆脱"整个出口 IP 共享的免费日预算"导致的 429 |
 | `searchPerPage` | `50` | 新增 |
 | `maxBatch` | `100` | references/related/earlier/later/author 单次上限 |
 | `maxCitations` | `100` | citations/later 单次上限 |
@@ -452,6 +453,7 @@ C 档功能在本轮的验收判据是**“确实没做 + 前置条件已登记�
 |---|---|---|---|
 | 2026-09（t1 r1） | 初版冻结 | 完成 RR 功能清单 → 可验收 spec | 冻结 A0–A7、B1–B4、X1–X7、C1–C11 |
 | 2026-09（t8，勘误） | AC-C-1 的 grep 词表：移除 `share`，替换为更精确的 `public link` 与 `invite` | `share` 是普通英文词，会命中**非 C 档文本**（假阳性）：`src/client.js` 的布局数学里有 `share = citedBy / top` 变量、注释里有 “year share the same x”；旧版 `src/tools.js` 的说明句也含 “share one library”。用它判“是否私自实现了 C3 分享功能”会把布局代码判成违规。C3 的真实特征是**公开链接**与**邀请协作者**，故用 `public link` / `invite` 替代（`collaborator` 原样保留）。判定范围同时明确为 host 侧 7 个文件（`graph.js`/`routes.js`/`tools.js`/`store.js`/`bibtex.js`/`config.js`/`index.js`），client 侧入口由面板入口清单与 t4/t7 证据覆盖 | AC-C-1 的词表更精确；**AC 编号与判定强度不变**，只是去掉假阳性来源。实现方与验证方都应使用新词表重跑 grep |
+| 2026-09（t8 之后，用户拍板新增） | §6.3 配置键由 9 个扩为 10 个：新增 `apiKey`（默认空字符串）。同步更新 `src/config.js`（默认值 + trim 解析）、`src/graph.js`（原 `withMailto` 收口改名为 `withAuth`，非空时追加 `api_key=`）、`cordis.patch.yml`（文档化但有意不写死）、README 中英双语、以及两处硬断言（`test/local.mjs` 键集、`test/parity.mjs` 的 “exactly the ten frozen keys”）；新增断言 `AC-A5-1b`（默认空 + trim）、`AC-A5-7b`（无 key 时不得出现 `api_key=`）、`AC-A5-7c`（有 key 时每个请求都带） | 实测 OpenAlex 无 key 请求返回 429 `Insufficient budget`：免费日预算由**整个出口 IP 共享**，团队成员大量真实联网验证把它耗尽，导致用户自己的搜索也不可用。官方 429 报文明确指出解法是使用自有 key（免费、独立预算）。因 macOS GUI 应用拿不到 shell 的 `export`，必须走配置而非环境变量 | 冻结的“9 键契约”变为 10 键；`test/parity.mjs` 由 139 项增至 142 项且全绿；t9 对“恰好九个键”的评审结论在**该键**上已过期，其余结论不受影响。已实现（无 key 行为逐字不变：`withAuth` 在 `apiKey === ''` 时输出与旧 `withMailto` 完全相同） |
 
 ---
 

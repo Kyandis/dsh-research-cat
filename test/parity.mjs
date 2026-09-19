@@ -447,9 +447,15 @@ section('config (AC-A5-1, AC-A5-6, AC-A2-4)')
     overridden !== null && overridden.storePath === join(envHome, 'parity', 'library.json'),
     overridden === null ? 'missing' : String(overridden.storePath))
 
-  check('AC-A5-1 resolveConfig exposes exactly the nine frozen keys',
-    defaults !== null && Object.keys(defaults).length === 9,
+  check('AC-A5-1 resolveConfig exposes exactly the ten frozen keys',
+    defaults !== null && Object.keys(defaults).length === 10,
     defaults === null ? 'missing' : Object.keys(defaults).join(','))
+
+  check('AC-A5-1b apiKey defaults to empty and is trimmed when set (spec §11 change record)',
+    defaults !== null && defaults.apiKey === '' &&
+      resolveConfig({ apiKey: '  k-123  ' }).apiKey === 'k-123' &&
+      resolveConfig({ apiKey: 42 }).apiKey === '',
+    defaults === null ? 'missing' : JSON.stringify({ dflt: defaults.apiKey }))
 }
 
 /* ---------------------------------------------------------- pure helpers */
@@ -813,6 +819,20 @@ section('exploration axes (AC-A1, AC-A2, AC-A3, AC-A4, AC-A5)')
     check('AC-A5-7 every OpenAlex request carries mailto',
       stub.state.urls.length > 0 && stub.state.urls.every((url) => url.indexOf('mailto=') >= 0),
       String(stub.state.urls.length))
+    check('AC-A5-7b a keyless library never sends api_key',
+      stub.state.urls.every((url) => url.indexOf('api_key=') < 0),
+      String(stub.state.urls.filter((url) => url.indexOf('api_key=') >= 0).length))
+
+    const keyedLibrary = await openLibrary(baseOptions({ apiKey: 'key-abc' }))
+    if (keyedLibrary === null) {
+      check('AC-A5-7c a configured apiKey rides every OpenAlex request', false, 'openLibrary missing')
+    } else {
+      stub.state.urls = []
+      await keyedLibrary.search('Reference')
+      check('AC-A5-7c a configured apiKey rides every OpenAlex request',
+        stub.state.urls.length > 0 && stub.state.urls.every((url) => url.indexOf('api_key=key-abc') >= 0),
+        JSON.stringify(stub.state.urls.slice(0, 2)))
+    }
     let pageRejected = false
     try { await searchLibrary.search('Reference', undefined, 0) } catch (error) { pageRejected = error.code === 'invalid' }
     check('AC-A4-7 an illegal page number is rejected as invalid', pageRejected)

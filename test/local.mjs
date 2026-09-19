@@ -281,7 +281,7 @@ check('config defaults',
   JSON.stringify(defaults))
 
 check('AC-A5-1 the frozen config default set is complete and resolves storePath under DSH_HOME',
-  sameJson(Object.keys(defaults).sort(), ['concurrency', 'exposeTool', 'mailto', 'maxBatch', 'maxCitations', 'maxNodes', 'maxSeeds', 'searchPerPage', 'storePath']) &&
+  sameJson(Object.keys(defaults).sort(), ['apiKey', 'concurrency', 'exposeTool', 'mailto', 'maxBatch', 'maxCitations', 'maxNodes', 'maxSeeds', 'searchPerPage', 'storePath']) &&
   defaults.storePath === defaultTmpStore,
   JSON.stringify({ keys: Object.keys(defaults).sort(), storePath: defaults.storePath }))
 

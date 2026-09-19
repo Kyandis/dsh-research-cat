@@ -23,6 +23,14 @@
         # Contact address sent to OpenAlex's polite pool. Present on every
         # request the engine makes.
         mailto: "dsh-research-cat@localhost"
+        # OpenAlex API key (spec §11 change record). Empty means keyless:
+        # requests then draw on the free daily budget shared by everyone on the
+        # egress IP, which is exhausted easily — the symptom is HTTP 429
+        # "Insufficient budget" and it resets at midnight UTC. OpenAlex keys are
+        # free and carry their own budget: request one at
+        # https://help.openalex.org/api/authentication/ , put it here, restart
+        # DSH. Deliberately left unset so a private key is never committed.
+        # apiKey: ""
         # Search results per page.
         searchPerPage: 50
         # Neighbours pulled per expand for references / related / earlier /

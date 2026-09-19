@@ -120,6 +120,7 @@ dsh plugin --profile <你的 profile> add link:/path/to/dsh-research-cat
 |---|---|---|
 | `exposeTool` | `true` | 是否注册 `research_cat` 工具 |
 | `mailto` | `dsh-research-cat@localhost` | OpenAlex polite-pool 联系地址 |
+| `apiKey` | 空（无 key） | OpenAlex API key；**免费申请且有自己的预算**。不设时请求会算在整个出口 IP 共享的免费日预算上，用尽即 429 |
 | `searchPerPage` | `50` | 搜索每页条数 |
 | `maxBatch` | `100` | references / related / earlier / author 单次上限 |
 | `maxCitations` | `100` | citations / later 单次上限 |
@@ -127,6 +128,18 @@ dsh plugin --profile <你的 profile> add link:/path/to/dsh-research-cat
 | `maxSeeds` | `50` | 种子上限 |
 | `concurrency` | `4` | OpenAlex 并发上限 |
 | `storePath` | `${DSH_HOME:-$HOME/.dsh}/research-cat/library.json` | 库文件位置（见下） |
+
+### 搜索被 429 限流时：配置 OpenAlex API key
+
+无 key 的请求算在**整个出口 IP 共享的免费日预算**上，用尽即返回 429（`Insufficient budget`，午夜 UTC 重置）——表现是"搜索突然不工作"，但根因在上游配额，不是插件坏了。OpenAlex 的 key **免费且携带独立预算**：
+
+1. 按 <https://help.openalex.org/api/authentication/> 申请免费 key
+2. 在 `cordis.patch.yml` 的配置块里加 `apiKey: "你的key"`（该键**有意不写死**在仓库默认里，避免把私人 key 提交进版本库）
+3. 重启 DSH
+
+设好后每个 OpenAlex 请求都会带上 `api_key=`；未设置时**完全不带**该参数。这两点都有断言覆盖（`AC-A5-7b` / `AC-A5-7c`），不是"看起来生效"。
+
+> 注意：macOS 上 DSH 桌面应用由 Finder/Dock 启动，**拿不到你 shell 里 `export` 的环境变量**，所以 key 走配置而不是环境变量。
 
 ## 持久化库（库落盘 / 图临时）
 

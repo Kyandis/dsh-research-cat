@@ -350,6 +350,7 @@ function sleep(ms) {
 /**
  * @typedef {object} LibraryOptions
  * @property {string} mailto - OpenAlex polite-pool contact address.
+ * @property {string} apiKey - OpenAlex API key; empty means keyless.
  * @property {number} searchPerPage - search page size.
  * @property {number} maxNodes - papers per graph ceiling.
  * @property {number} maxBatch - neighbours per references/related/earlier/author expand.
@@ -370,6 +371,7 @@ function sleep(ms) {
  */
 export function createLibrary(options) {
   const mailto = options.mailto
+  const apiKey = typeof options.apiKey === 'string' ? options.apiKey : ''
   const searchPerPage = options.searchPerPage
   const maxNodes = options.maxNodes
   const maxBatch = options.maxBatch
@@ -435,7 +437,17 @@ export function createLibrary(options) {
 
   /* -------------------------------------------------------------- network */
 
-  const withMailto = (url) => url + (url.indexOf('?') >= 0 ? '&' : '?') + 'mailto=' + encodeURIComponent(mailto)
+  /**
+   * Every OpenAlex request carries the polite-pool `mailto`, plus the
+   * configured `api_key` when there is one. A key draws on its own budget
+   * instead of the free daily budget shared by everyone on the egress IP —
+   * which is exactly what produces HTTP 429 "Insufficient budget".
+   */
+  const withAuth = (url) => {
+    const sep = url.indexOf('?') >= 0 ? '&' : '?'
+    const keyed = apiKey === '' ? url : url + sep + 'api_key=' + encodeURIComponent(apiKey)
+    return keyed + (keyed.indexOf('?') >= 0 ? '&' : '?') + 'mailto=' + encodeURIComponent(mailto)
+  }
 
   function timeoutSignal() {
     if (typeof AbortSignal === 'undefined' || typeof AbortSignal.timeout !== 'function') return undefined
@@ -507,7 +519,7 @@ export function createLibrary(options) {
     params.set('sort', filters.sort === 'year' ? 'publication_year:desc' : 'cited_by_count:desc')
     const parts = filterParts(filters, [])
     if (parts.length > 0) params.set('filter', parts.join(','))
-    const data = await getJson(withMailto(OA + '/works?' + params.toString()))
+    const data = await getJson(withAuth(OA + '/works?' + params.toString()))
     const raw = Array.isArray(data.results) ? data.results.map(recordOf) : []
     const total = data.meta !== null && typeof data.meta === 'object' && typeof data.meta.count === 'number'
       ? data.meta.count
@@ -520,7 +532,7 @@ export function createLibrary(options) {
     params.set('filter', 'doi:' + doi.toLowerCase())
     params.set('select', RECORD_SELECT)
     params.set('per-page', '1')
-    const data = await getJson(withMailto(OA + '/works?' + params.toString()))
+    const data = await getJson(withAuth(OA + '/works?' + params.toString()))
     if (!Array.isArray(data.results) || data.results.length === 0) return null
     return recordOf(data.results[0])
   }
@@ -535,7 +547,7 @@ export function createLibrary(options) {
       params.set('filter', 'openalex_id:' + chunks[c].join('|'))
       params.set('select', RECORD_SELECT)
       params.set('per-page', String(chunks[c].length))
-      const data = await getJson(withMailto(OA + '/works?' + params.toString()))
+      const data = await getJson(withAuth(OA + '/works?' + params.toString()))
       if (Array.isArray(data.results)) {
         for (let i = 0; i < data.results.length; i++) results.push(recordOf(data.results[i]))
       }
@@ -545,7 +557,7 @@ export function createLibrary(options) {
 
   async function oaEdgeLists(id) {
     const url = OA + '/works/' + id + '?select=' + encodeURIComponent(EDGE_SELECT)
-    const data = await getJson(withMailto(url))
+    const data = await getJson(withAuth(url))
     return {
       references: Array.isArray(data.referenced_works) ? data.referenced_works : [],
       related: Array.isArray(data.related_works) ? data.related_works : [],
@@ -559,7 +571,7 @@ export function createLibrary(options) {
     params.set('select', RECORD_SELECT)
     params.set('sort', 'cited_by_count:desc')
     params.set('per-page', String(limit))
-    const data = await getJson(withMailto(OA + '/works?' + params.toString()))
+    const data = await getJson(withAuth(OA + '/works?' + params.toString()))
     return Array.isArray(data.results) ? data.results.map(recordOf) : []
   }
 
@@ -570,13 +582,13 @@ export function createLibrary(options) {
     params.set('select', RECORD_SELECT)
     params.set('sort', 'cited_by_count:desc')
     params.set('per-page', String(limit))
-    const data = await getJson(withMailto(OA + '/works?' + params.toString()))
+    const data = await getJson(withAuth(OA + '/works?' + params.toString()))
     return Array.isArray(data.results) ? data.results.map(recordOf) : []
   }
 
   async function oaDetail(id) {
     const url = OA + '/works/' + id + '?select=' + encodeURIComponent(DETAIL_SELECT)
-    const data = await getJson(withMailto(url))
+    const data = await getJson(withAuth(url))
     const paper = recordOf(data)
     paper.abstract = abstractOf(data)
     paper.authors = authorsOf(data)
@@ -605,7 +617,7 @@ export function createLibrary(options) {
     params.set('filter', 'orcid:' + unique.slice(0, ID_CHUNK).join('|'))
     params.set('select', 'id,orcid,display_name,works_count')
     params.set('per-page', String(ID_CHUNK))
-    const data = await getJson(withMailto(OA + '/authors?' + params.toString()))
+    const data = await getJson(withAuth(OA + '/authors?' + params.toString()))
     const results = Array.isArray(data.results) ? data.results : []
     for (let i = 0; i < results.length; i++) {
       const record = results[i]
@@ -623,7 +635,7 @@ export function createLibrary(options) {
 
   async function oaAuthors(id) {
     const url = OA + '/works/' + id + '?select=' + encodeURIComponent('id,authorships')
-    const data = await getJson(withMailto(url))
+    const data = await getJson(withAuth(url))
     const list = Array.isArray(data.authorships) ? data.authorships : []
     const entries = []
     for (let i = 0; i < list.length; i++) {

@@ -177,7 +177,7 @@ ${table}
 
 ## 7. \`test/local.mjs\` 本轮变更摘要
 
-- **重基线 3 条陈旧断言**（标签不变、数量不减、加强为完整集合）：\`config defaults\`（9 键完整默认集 + storePath 落在 tmp）、\`config overrides + bad values fall back\`（回退值 100）、\`tool exposes the four actions\`（enum 改为冻结的 8 action，另加 AC-A0-3 断言原四轴仍是前四项）。
+- **重基线 3 条陈旧断言**（标签不变、数量不减、加强为完整集合）：\`config defaults\`（10 键完整默认集 + storePath 落在 tmp）、\`config overrides + bad values fall back\`（回退值 100）、\`tool exposes the four actions\`（enum 改为冻结的 8 action，另加 AC-A0-3 断言原四轴仍是前四项）。
 - **密封**：\`DSH_HOME\`/engine storePath/host storePath 全部指向 \`os.tmpdir()\`；新增 3 级路径解析断言（config → DSH_HOME → homedir，homedir 级只做纯解析不做 IO）；新增“真实库未被创建或修改”断言。
 - **失败路径断言**：非法 work id、空查询、超 \`maxNodes\` 配额（引擎 + 真实 HTTP）、不存在的 collection、损坏/空/截断/高版本持久化文件、OpenAlex 429（重试一次后 operation）、404（invalid）、截断响应。
 - **真实网络取证**：AC-A5-2/3/4/7、AC-A1-1（含上游 \`author.id === null\` 的事实采集与 ORCID 回退）、AC-A1-2/3/4、AC-A3-1/2。

@@ -117,6 +117,7 @@ Override through the `config` block of `cordis.patch.yml` (or a profile patch la
 |---|---|---|
 | `exposeTool` | `true` | register the `research_cat` tool |
 | `mailto` | `dsh-research-cat@localhost` | OpenAlex polite-pool contact address |
+| `apiKey` | empty (keyless) | OpenAlex API key; **free, and it carries its own budget**. When unset, requests draw on the free daily budget shared by the whole egress IP and 429 once it is gone |
 | `searchPerPage` | `50` | search page size |
 | `maxBatch` | `100` | references / related / earlier / author per expand |
 | `maxCitations` | `100` | citations / later per expand |
@@ -124,6 +125,18 @@ Override through the `config` block of `cordis.patch.yml` (or a profile patch la
 | `maxSeeds` | `50` | seed ceiling |
 | `concurrency` | `4` | concurrent OpenAlex requests |
 | `storePath` | `${DSH_HOME:-$HOME/.dsh}/research-cat/library.json` | library file location (see below) |
+
+### When search is rate-limited (429): configure an OpenAlex API key
+
+Keyless requests draw on the **free daily budget shared by everyone on your egress IP**, and once it is gone OpenAlex answers 429 (`Insufficient budget`; it resets at midnight UTC). The symptom looks like "search suddenly broke", but the cause is upstream quota, not the plugin. OpenAlex keys are **free and carry their own budget**:
+
+1. request a free key at <https://help.openalex.org/api/authentication/>
+2. add `apiKey: "your-key"` to the config block in `cordis.patch.yml` (the key is deliberately **not** written into the repository defaults, so a private key is never committed)
+3. restart DSH
+
+Once set, every OpenAlex request carries `api_key=`; when unset the parameter is absent entirely. Both directions are asserted (`AC-A5-7b` / `AC-A5-7c`), so this is not a "looks like it works" claim.
+
+> Note: on macOS the DSH desktop app is launched by Finder/Dock and therefore **cannot see variables you `export` in a shell** — which is why the key is configuration rather than an environment variable.
 
 ## The persistent library (library on disk / graph in memory)
 
