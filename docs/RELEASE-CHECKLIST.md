@@ -6,6 +6,9 @@
 
 > **为什么必须重启**：`desktop` profile 的手动 `link:` 安装不会热挂载，host 半边（工具 + 路由）与 client 半边（侧栏 + 面板）都在 **DSH 进程启动时**加载。只有应用内插件市场点装才会当场热挂载（日志里会打 `[dsh-market] hot-mounted <plugin>`）。
 > 因此：**本清单第 2 节必须在重启 DSH 之后执行**；第 1 节（静态安装检查）可以在重启前做。
+>
+> **本清单的验证状态（重要）**：本任务交付的是**清单本身及其可执行性**，第 2 节**尚未**在进程内验证通过。实测当前 DSH 进程挂载的仍是**改动前**的 host 半边——运行期探针 `research_cat {action:"collections"}` 返回
+> `invalid arguments: "action" must be one of ["search","add","expand","list"]`（即 4-action 旧版），而 `src/tools.js` 已经是 8 action。重启 DSH 后按第 2 节逐条勾选即可；在重启之前，第 2 节的任何一条都**不得**被表述为“已通过”。
 
 ---
 
@@ -78,6 +81,8 @@ cd /Users/depengwang/DSH/dsh-research-cat && git status --porcelain && shasum -a
 ---
 
 ## 2. 重启后的自检清单
+
+> **执行前提**：本节**只能在重启 DSH 之后**执行，且**当前尚未执行过**（进程内仍是改动前的 4-action 旧版 host 半边）。本任务交付的是清单本身；下面的每一项都是重启后**待勾选**的检查项，不是已通过的结论。
 
 **步骤 0**：完全退出 DSH 桌面应用（不是关窗口），重新启动，打开 Research Cat 面板。
 
@@ -153,6 +158,43 @@ ls -la "$HOME/.dsh/research-cat/" | grep -E '\.tmp-|\.bak-'
 
 | 事项 | 现象 | 处理 |
 |---|---|---|
-| OpenAlex 无 key 免费预算按出口 IP 共享 | 预算耗尽时所有**真实联网**操作返回 HTTP 429（`retry-after` 指向午夜 UTC 重置）；面板联网操作报错，`test/local.mjs` 的 live 段按 spec §10.4 判 FAILED | 等配额重置，或让出口走带 API key 的通道；离线与真实 HTTP 路由检查不受影响 |
+| OpenAlex 无 key 免费预算按出口 IP 共享 | 预算耗尽时所有**真实联网**操作返回 HTTP 429（`retry-after` 指向午夜 UTC 重置）；面板联网操作报错，`test/local.mjs` 的 live 段按 spec §10.4 判 FAILED | 见 §3.1；离线与真实 HTTP 路由检查不受影响 |
 | 手动 `link:` 安装 | 不热挂载，必须重启 DSH | 用应用内插件市场点装可热挂载（日志 `[dsh-market] hot-mounted`） |
 | 多实例共享同一 `storePath` | last-writer-wins | 已登记为限制；不要同时开两个 DSH 写同一个库 |
+
+### 3.1 live 段：环境受限，**当前窗口未通过**（deferred 取证）
+
+> 这一节是**如实登记**，不是“已通过”。在配额受限窗口内跑 `node test/local.mjs` 时，26 项真实联网检查会 FAILED；这属于环境条件，不是实现、安装或文档缺陷。
+
+**① 根因（实测数据）**
+
+- 触发时间与现象：`2026-09-19 08:48:33Z` 起，对 `https://api.openalex.org/works?...&mailto=...` 的无 key 请求返回 **HTTP 429**；响应头 `retry-after: 54687`（≈15.2 h）、`x-ratelimit-remaining: 0`、`x-ratelimit-remaining-usd: 0`、`x-ratelimit-reset: 54687`。
+- 机制：OpenAlex 对**无 API key** 的请求按**网络出口 IP 共享的免费日预算**计费；预算耗尽后该 IP 的全部请求被限流，直到 **午夜 UTC 重置**（本次约 `2026-09-20 00:00Z` = `08:00 CST`）。成员在同一出口上做过大量真实联网验证，是预算耗尽的直接原因。
+- 影响范围：`node test/local.mjs` 的 **live 段 26 项**（`search reaches OpenAlex`、`AC-A5-2/3/4`、`addSeed`/`expand`/`details`/`removeSeed`/`clear`、`AC-A1-1..A1-4`、`AC-A3-1/2` 等）。实测输出：`131 PASS / 26 FAIL / 2 GAP`，`local: 26 check(s) FAILED`，exit 1。
+- **不受影响**：离线段（Loader 契约 / 配置 / 持久化 / 分块 / 筛选 / 失败路径）、真实 HTTP 路由段、以及 `test/parity.mjs`（139/0）、`test/client.mjs`、`lab/client-check.mjs` 全部保持全绿；密封自证也照常 PASS（`seal: the user's real ~/.dsh/research-cat/library.json was neither created nor modified by this run`，`real library fingerprint: (absent)`）。
+- **同一批 live AC 曾全绿**：`2026-09-19 08:11–08:13Z`（配额耗尽之前）t5 已采集 `node test/local.mjs` 全绿证据 `142 PASS / 0 FAIL / 1 GAP / exit 0`，含真实网络 AC-A1-1（`/authors` 4 个 A-id + author 轴 citedBy 单调不增）、AC-A1-2/3/4、AC-A3-1/2、AC-A5-2/3/4/7，并附 `test/local.mjs` 与真实库的前后 sha256（见 `test/AC-EVIDENCE.md` §2 与 `test/evidence/local-green.txt`）。因此当前只是**配额耗尽后的重跑**，不是证据丢失。
+
+**② 配额恢复后的重跑方式**
+
+```bash
+# 0) 先确认配额已恢复（期望 http=200；429 表示仍在窗口内）
+curl -s -o /dev/null -w "http=%{http_code}\n" \
+  "https://api.openalex.org/works?search=graph%20neural%20networks&per-page=1&mailto=dsh-research-cat@localhost"
+
+# 1) 重跑完整判据（期望末尾：local: all checks passed；exit 0）
+cd /Users/depengwang/DSH/dsh-research-cat && node test/local.mjs; echo "exit=$?"
+
+# 2) 只看 live 段与密封自证
+node test/local.mjs 2>&1 | grep -E "AC-A1-|AC-A3-|AC-A5-|seal:|real library fingerprint|local:"
+
+# 3) 若你的出口已接入自有 OpenAlex API key：把出口切到该通道后重复 1)，无需改动插件
+#    （插件本身不需要 key；key 只影响 429 预算，属网络出口配置）
+```
+
+期望结果：`142 PASS / 0 FAIL / 1 GAP / exit 0`，且密封自证仍为 PASS、真实库指纹前后不变（或 `(absent)`）。
+
+**③ 明确不写成已通过**
+
+- 本清单与本次交付**不主张** live 段在当前窗口已通过：它的状态是 **deferred（环境受限）**。
+- 在 `test/AC-EVIDENCE.md` 中，同一批 live AC 的状态是“**08:11–08:13Z 采集为 passed；当前配额窗口内重跑为 429**”，两者都如实登记，不互相替代。
+- 配额恢复后请把 `node test/local.mjs` 的完整输出（含 `local: all checks passed`）追加到 `test/evidence/` 并在 `test/AC-EVIDENCE.md` 更新，作为 live 段恢复的收尾证据。
